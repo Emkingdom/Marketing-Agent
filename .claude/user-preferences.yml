@@ -1,0 +1,23 @@
+# AgentKits Marketing - User Preferences
+# Last Updated: 2026-05-13T16:01:29Z
+
+language: auto                    # auto = match user's language
+timezone: America/Santo_Domingo   # GMT-4, Republica Dominicana
+date_format: YYYY-MM-DD
+default_scope: complete           # basic | recommended | complete | ask
+confirmation: always
+remember_choices: true
+
+# User Profile
+profile:
+  role: streamer_content_creator
+  niche: streaming_social_media
+  goal: personal_brand_development
+  content_volume: 10_videos_daily
+  platforms: [tiktok, instagram_reels, youtube_shorts, twitter_x]
+
+recent:
+  report_month: null
+  content_type: null
+  target_audience: null
+  channels: []

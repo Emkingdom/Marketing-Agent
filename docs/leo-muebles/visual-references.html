@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leo Muebles — Referencias Visuales de Marca</title>
+<style>
+  :root {
+    --gold: #F5A623;
+    --navy: #1A3A5C;
+    --red: #D64045;
+    --cream: #FFF8F0;
+    --dark: #1A1A2E;
+    --gray: #6B7280;
+    --light-gray: #F3F4F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #F7F8FA; color: #1A1A2E; line-height: 1.6; }
+
+  .page-header { background: var(--navy); color: white; padding: 40px; text-align: center; }
+  .page-header h1 { font-size: 2rem; font-weight: 800; }
+  .page-header p { color: #94a3b8; margin-top: 8px; }
+
+  .section { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+  .section-title { font-size: 1.4rem; font-weight: 700; color: var(--navy); border-left: 5px solid var(--gold); padding-left: 16px; margin-bottom: 28px; }
+
+  /* COLOR PALETTE */
+  .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .color-card { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .color-swatch { height: 160px; position: relative; display: flex; align-items: center; justify-content: center; }
+  .color-swatch span { font-size: 2.5rem; }
+  .color-info { background: white; padding: 16px; }
+  .color-name { font-weight: 700; font-size: 1rem; }
+  .color-hex { font-family: monospace; color: var(--gray); font-size: 0.9rem; }
+  .color-use { font-size: 0.8rem; color: var(--gray); margin-top: 6px; }
+
+  /* LOGO CONCEPTS */
+  .logo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .logo-card { background: white; border-radius: 20px; padding: 32px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; border: 2px solid transparent; transition: all 0.3s; }
+  .logo-card.recommended { border-color: var(--gold); position: relative; }
+  .logo-card.recommended::before { content: '★ RECOMENDADO'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--gold); color: white; font-size: 0.7rem; font-weight: 800; padding: 4px 16px; border-radius: 20px; white-space: nowrap; }
+  .logo-preview { width: 200px; height: 180px; margin: 0 auto 20px; }
+  .logo-label { font-weight: 800; font-size: 1.1rem; color: var(--navy); margin-bottom: 8px; }
+  .logo-desc { font-size: 0.85rem; color: var(--gray); line-height: 1.5; }
+  .logo-colors { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.1); }
+
+  /* TYPOGRAPHY */
+  .type-showcase { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  .type-row { padding: 20px 0; border-bottom: 1px solid #F3F4F6; }
+  .type-row:last-child { border-bottom: none; }
+  .type-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 8px; }
+
+  /* SOCIAL MEDIA TEMPLATES */
+  .social-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .post-preview { border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); aspect-ratio: 1; position: relative; display: flex; flex-direction: column; }
+  .post-preview.story { aspect-ratio: 9/16; }
+  .post-img-area { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+  .post-overlay { padding: 20px; }
+  .post-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; opacity: 0.8; }
+  .post-title { font-weight: 800; font-size: 1.1rem; line-height: 1.3; }
+  .post-sub { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+  .post-cta { display: inline-block; background: white; border-radius: 8px; padding: 8px 16px; font-size: 0.75rem; font-weight: 700; margin-top: 10px; }
+  .logo-badge { position: absolute; top: 16px; right: 16px; background: white; border-radius: 8px; padding: 4px 10px; font-size: 0.65rem; font-weight: 800; color: var(--navy); }
+
+  /* INSTAGRAM GRID */
+  .ig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 420px; }
+  .ig-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: white; position: relative; }
+  .ig-cell span { position: absolute; bottom: 6px; left: 8px; font-size: 0.6rem; font-weight: 600; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; }
+
+  /* AD MOCKUPS */
+  .ad-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .ad-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .ad-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F3F4F6; }
+  .ad-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--navy); font-size: 0.8rem; }
+  .ad-name { font-weight: 700; font-size: 0.85rem; }
+  .ad-sponsored { font-size: 0.7rem; color: var(--gray); }
+  .ad-image { height: 220px; display: flex; align-items: center; justify-content: center; font-size: 5rem; }
+  .ad-body { padding: 16px; }
+  .ad-headline { font-weight: 800; font-size: 1rem; color: var(--navy); }
+  .ad-text { font-size: 0.8rem; color: var(--gray); margin-top: 4px; }
+  .ad-cta-btn { background: var(--navy); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 12px; cursor: pointer; width: 100%; }
+
+  /* WHATSAPP */
+  .wa-mockup { background: #E5DDD5; border-radius: 16px; padding: 20px; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .wa-header { background: #128C7E; color: white; border-radius: 12px 12px 0 0; padding: 12px 16px; display: flex; align-items: center; gap: 10px; margin: -20px -20px 16px; }
+  .wa-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+  .wa-name { font-weight: 700; font-size: 0.9rem; }
+  .wa-status { font-size: 0.7rem; opacity: 0.8; }
+  .wa-msg { background: white; border-radius: 0 12px 12px 12px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); max-width: 85%; }
+  .wa-msg-out { background: #DCF8C6; border-radius: 12px 0 12px 12px; margin-left: auto; }
+  .wa-time { font-size: 0.65rem; color: var(--gray); text-align: right; margin-top: 4px; }
+  .wa-text { font-size: 0.85rem; line-height: 1.5; }
+  .wa-menu { background: #F0F0F0; border-radius: 8px; padding: 10px; margin-top: 8px; }
+  .wa-option { background: white; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: #128C7E; text-align: center; cursor: pointer; }
+  .wa-option:last-child { margin-bottom: 0; }
+
+  /* TIKTOK MOCKUP */
+  .tiktok-mockup { background: black; border-radius: 24px; overflow: hidden; width: 220px; height: 390px; position: relative; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .tt-video { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; }
+  .tt-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 40%, transparent 70%); }
+  .tt-info { position: absolute; bottom: 60px; left: 16px; right: 60px; color: white; }
+  .tt-username { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; }
+  .tt-caption { font-size: 0.75rem; line-height: 1.4; }
+  .tt-audio { font-size: 0.7rem; opacity: 0.8; margin-top: 8px; }
+  .tt-actions { position: absolute; right: 12px; bottom: 80px; display: flex; flex-direction: column; align-items: center; gap: 16px; color: white; }
+  .tt-action { text-align: center; font-size: 0.6rem; }
+  .tt-action-icon { font-size: 1.5rem; display: block; }
+  .tt-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); padding: 10px 20px; display: flex; justify-content: space-around; }
+  .tt-nav { color: white; font-size: 0.6rem; text-align: center; }
+
+  /* BRAND VOICE */
+  .voice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .voice-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .voice-card.correct { border-left: 4px solid #22C55E; }
+  .voice-card.wrong { border-left: 4px solid #EF4444; }
+  .voice-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .voice-label.correct { color: #22C55E; }
+  .voice-label.wrong { color: #EF4444; }
+  .voice-text { font-size: 0.9rem; line-height: 1.6; font-style: italic; color: #374151; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+  .badge-gold { background: #FEF3C7; color: #92400E; }
+  .badge-navy { background: #EFF6FF; color: #1E3A5F; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: linear-gradient(to right, transparent, #E5E7EB, transparent); margin: 48px 0; }
+
+  .note { background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 12px; padding: 16px 20px; font-size: 0.85rem; color: #92400E; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🦁 Leo Muebles — Referencias Visuales de Marca</h1>
+  <p>República Dominicana · Mayo 2026 · Guía de identidad visual</p>
+</div>
+
+<!-- ===== PALETA DE COLORES ===== -->
+<div class="section">
+  <div class="section-title">🎨 Paleta de Colores Oficial</div>
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#F5A623;">🦁</div>
+      <div class="color-info">
+        <div class="color-name">Dorado Leo</div>
+        <div class="color-hex">#F5A623</div>
+        <div class="color-use">Logo, CTA, highlights, badges de oferta</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#1A3A5C;">🏠</div>
+      <div class="color-info">
+        <div class="color-name" style="color:#1A3A5C">Azul Confianza</div>
+        <div class="color-hex">#1A3A5C</div>
+        <div class="color-use">Fondo header, texto principal, navbar</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#D64045;">🔥</div>
+      <div class="color-info">
+        <div class="color-name" style="color:#D64045">Rojo Energía</div>
+        <div class="color-hex">#D64045</div>
+        <div class="color-use">Ofertas, urgencia, badges "NUEVO", alertas</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#FFF8F0; border: 1px solid #E5E7EB;">🌿</div>
+      <div class="color-info">
+        <div class="color-name">Crema Hogar</div>
+        <div class="color-hex">#FFF8F0</div>
+        <div class="color-use">Fondos de página, tarjetas, fotografía productos</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== LOGO CONCEPTS ===== -->
+<div class="section">
+  <div class="section-title">🦁 Conceptos de Modernización del Logo</div>
+  <p style="color:var(--gray); margin-bottom: 28px; font-size:0.9rem;">Tres propuestas que evolucionan el león actual hacia un diseño moderno. El Concepto C es el recomendado por versatilidad y bajo costo de implementación.</p>
+
+  <div class="logo-grid">
+    <!-- Concepto A -->
+    <div class="logo-card">
+      <svg class="logo-preview" viewBox="0 0 200 180">
+        <!-- Concepto A: Minimalista -->
+        <circle cx="100" cy="85" r="55" fill="#1A3A5C"/>
+        <!-- Lion face minimal -->
+        <ellipse cx="100" cy="88" rx="32" ry="28" fill="#F5A623"/>
+        <!-- Ears -->
+        <path d="M 72 66 L 65 50 L 82 62 Z" fill="#1A3A5C"/>
+        <path d="M 128 66 L 135 50 L 118 62 Z" fill="#1A3A5C"/>
+        <!-- Eyes -->
+        <circle cx="90" cy="80" r="4" fill="#1A3A5C"/>
+        <circle cx="110" cy="80" r="4" fill="#1A3A5C"/>
+        <!-- Nose -->
+        <ellipse cx="100" cy="91" rx="5" ry="3" fill="#1A3A5C"/>
+        <!-- Mane lines (minimal) -->
+        <circle cx="100" cy="85" r="38" fill="none" stroke="#F5A623" stroke-width="4" stroke-dasharray="8 4"/>
+        <!-- Text -->
+        <text x="100" y="160" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="18" fill="#1A3A5C" letter-spacing="2">LEO MUEBLES</text>
+      </svg>
+      <div class="logo-label">Concepto A — Minimalista</div>
+      <div class="logo-colors">
+        <div class="dot" style="background:#1A3A5C;"></div>
+        <div class="dot" style="background:#F5A623;"></div>
+        <div class="dot" style="background:white; border:2px solid #E5E7EB;"></div>
+      </div>
+      <div class="logo-desc" style="margin-top:12px;">León geométrico en azul noche + dorado. Ideal para web, apps y papelería corporativa. Fuente: Montserrat Black.</div>
+    </div>
+
+    <!-- Concepto B -->
+    <div class="logo-card">
+      <svg class="logo-preview" viewBox="0 0 200 180">
+        <!-- Concepto B: Bold & Energético -->
+        <!-- Mane bold -->
+        <circle cx="100" cy="82" r="52" fill="#D64045"/>
+        <circle cx="100" cy="82" r="42" fill="#F5A623"/>
+        <!-- Face -->
+        <ellipse cx="100" cy="85" rx="30" ry="26" fill="#FFD166"/>
+        <!-- Geometric ears -->
+        <polygon points="72,62 60,44 88,60" fill="#D64045"/>
+        <polygon points="128,62 140,44 112,60" fill="#D64045"/>
+        <!-- Bold eyes -->
+        <rect x="84" y="76" width="10" height="8" rx="4" fill="#1A3A5C"/>
+        <rect x="106" y="76" width="10" height="8" rx="4" fill="#1A3A5C"/>
+        <!-- Nose -->
+        <polygon points="100,89 96,96 104,96" fill="#D64045"/>
+        <!-- Stripe accent -->
+        <rect x="62" y="80" width="76" height="4" rx="2" fill="#D64045" opacity="0.3"/>
+        <!-- Text block -->
+        <rect x="20" y="148" width="160" height="26" rx="6" fill="#D64045"/>
+        <text x="100" y="165" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="14" fill="white" letter-spacing="3">LEO MUEBLES</text>
+      </svg>
+      <div class="logo-label">Concepto B — Bold & Energético</div>
+      <div class="logo-colors">
+        <div class="dot" style="background:#D64045;"></div>
+        <div class="dot" style="background:#F5A623;"></div>
+        <div class="dot" style="background:#FFD166;"></div>
+      </div>
+      <div class="logo-desc" style="margin-top:12px;">Impacto máximo para vallas, anuncios digitales y materiales de oferta. Fuente: Barlow Condensed ExtraBold.</div>
+    </div>
+
+    <!-- Concepto C — Recomendado -->
+    <div class="logo-card recommended">
+      <svg class="logo-preview" viewBox="0 0 200 180">
+        <!-- Concepto C: Moderno Familiar -->
+        <!-- Soft mane -->
+        <circle cx="100" cy="80" r="50" fill="#F5A623" opacity="0.15"/>
+        <circle cx="100" cy="80" r="42" fill="#F5A623" opacity="0.3"/>
+        <!-- Main mane -->
+        <circle cx="100" cy="80" r="36" fill="#F5A623"/>
+        <!-- Face rounded -->
+        <ellipse cx="100" cy="83" rx="26" ry="24" fill="#FFD580"/>
+        <!-- Soft ears -->
+        <ellipse cx="74" cy="58" rx="12" ry="14" fill="#F5A623"/>
+        <ellipse cx="126" cy="58" rx="12" ry="14" fill="#F5A623"/>
+        <!-- Eyes friendly -->
+        <circle cx="91" cy="78" r="5" fill="#1A3A5C"/>
+        <circle cx="109" cy="78" r="5" fill="#1A3A5C"/>
+        <circle cx="93" cy="76" r="1.5" fill="white"/>
+        <circle cx="111" cy="76" r="1.5" fill="white"/>
+        <!-- Smile -->
+        <path d="M 91 91 Q 100 98 109 91" stroke="#1A3A5C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Nose -->
+        <ellipse cx="100" cy="88" rx="4" ry="3" fill="#D64045"/>
+        <!-- Wordmark -->
+        <text x="100" y="146" text-anchor="middle" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-weight="800" font-size="20" fill="#1A3A5C">LEO</text>
+        <text x="100" y="166" text-anchor="middle" font-family="Arial,sans-serif" font-weight="600" font-size="11" fill="#F5A623" letter-spacing="4">MUEBLES</text>
+      </svg>
+      <div class="logo-label">Concepto C — Moderno Familiar ⭐</div>
+      <div class="logo-colors">
+        <div class="dot" style="background:#F5A623;"></div>
+        <div class="dot" style="background:#1A3A5C;"></div>
+        <div class="dot" style="background:#D64045;"></div>
+        <div class="dot" style="background:#FFD580;"></div>
+      </div>
+      <div class="logo-desc" style="margin-top:12px;">León amigable y redondeado. Mantiene calidez del original, elimina lo rígido. Funciona en todos los canales. Fuente: Nunito ExtraBold (gratuita en Google Fonts).</div>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 <strong>Instrucciones para el diseñador:</strong> Usar el Concepto C como base. León redondeado (no angular), 3-4 colores máximo (#F5A623, #1A3A5C, #D64045, #FFD580). Fuente: Nunito ExtraBold para "LEO", Nunito Light o SemiBold para "MUEBLES". Entregar en SVG + PNG transparente (mínimo 1000px) + versión dark (blanco sobre fondo oscuro).
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== TIPOGRAFÍA ===== -->
+<div class="section">
+  <div class="section-title">✍️ Sistema Tipográfico</div>
+  <div class="type-showcase">
+    <div class="type-row">
+      <div class="type-label">Fuente Principal — Nunito ExtraBold (Google Fonts, gratis)</div>
+      <div style="font-family:Georgia,serif; font-size:2.4rem; font-weight:900; color:var(--navy); letter-spacing:-1px;">Leo Muebles RD</div>
+      <div style="font-size:0.8rem; color:var(--gray); margin-top:4px;">Uso: Logo, titulares, CTAs, precios destacados</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">H1 — Titular de Página (Nunito Bold, 32-40px)</div>
+      <div style="font-size:2rem; font-weight:700; color:var(--navy);">Renueva Tu Hogar a Tu Ritmo</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">H2 — Subtítulo de Sección (Nunito SemiBold, 22-28px)</div>
+      <div style="font-size:1.4rem; font-weight:600; color:var(--navy);">Muebles y Electrodomésticos con Crédito</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Body — Texto de Cuerpo (Open Sans Regular, 16px)</div>
+      <div style="font-size:1rem; color:#374151; max-width:600px;">Leo Muebles es tu tienda de confianza en República Dominicana. Encuentra sofás, camas matrimoniales, comedores y electrodomésticos de las mejores marcas con opciones de financiamiento accesible para toda la familia.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">CTA / Botón (Nunito ExtraBold, 14-16px, UPPERCASE)</div>
+      <div style="margin-top:8px; display:flex; gap:12px; flex-wrap:wrap;">
+        <span style="background:var(--gold); color:white; padding:12px 24px; border-radius:8px; font-weight:800; font-size:0.9rem; letter-spacing:0.5px;">VER CATÁLOGO →</span>
+        <span style="background:var(--navy); color:white; padding:12px 24px; border-radius:8px; font-weight:800; font-size:0.9rem;">ESCRÍBENOS POR WHATSAPP</span>
+        <span style="background:var(--red); color:white; padding:12px 24px; border-radius:8px; font-weight:800; font-size:0.9rem;">¡OFERTA QUINCENA!</span>
+      </div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Precio / Badge de Oferta</div>
+      <div style="margin-top:8px; display:flex; align-items:center; gap:16px;">
+        <span style="background:var(--red); color:white; padding:4px 12px; border-radius:6px; font-size:0.75rem; font-weight:800;">-20% QUINCENA</span>
+        <span style="text-decoration:line-through; color:var(--gray); font-size:1rem;">RD$25,000</span>
+        <span style="font-size:2rem; font-weight:900; color:var(--navy);">RD$19,900</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== SOCIAL MEDIA TEMPLATES ===== -->
+<div class="section">
+  <div class="section-title">📱 Templates de Redes Sociales</div>
+  <div class="social-grid">
+
+    <!-- Post 1: Producto con oferta -->
+    <div>
+      <p style="font-size:0.75rem; font-weight:700; color:var(--gray); margin-bottom:8px; text-transform:uppercase;">Post Instagram — Oferta de Producto</p>
+      <div class="post-preview" style="background: linear-gradient(135deg, #1A3A5C 0%, #0D2137 100%);">
+        <div class="logo-badge">🦁 Leo Muebles</div>
+        <div class="post-img-area" style="background:linear-gradient(135deg,#1A3A5C,#0D2137);">🛋️</div>
+        <div class="post-overlay" style="background:linear-gradient(to top, #1A3A5C 60%, transparent);">
+          <div class="post-tag" style="color:#F5A623;">⚡ OFERTA QUINCENA</div>
+          <div class="post-title" style="color:white; font-size:1.3rem;">Sofá 3 Plazas<br>RD$15,900</div>
+          <div class="post-sub" style="color:#94a3b8;">Cuotas desde RD$800/semana</div>
+          <span class="post-cta" style="color:var(--navy); font-size:0.7rem;">Escríbenos →</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post 2: Educativo/Tips -->
+    <div>
+      <p style="font-size:0.75rem; font-weight:700; color:var(--gray); margin-bottom:8px; text-transform:uppercase;">Post Instagram — Contenido Educativo</p>
+      <div class="post-preview" style="background:#FFF8F0;">
+        <div class="logo-badge">🦁 Leo Muebles</div>
+        <div class="post-img-area" style="background:#FFF8F0; flex-direction:column; gap:8px; padding:20px;">
+          <div style="font-size:1.5rem; font-weight:900; color:var(--navy); text-align:center; line-height:1.2;">5 cosas que debes saber antes de comprar un sofá</div>
+          <div style="font-size:0.7rem; color:var(--gray); text-align:center;">Guía de Leo Muebles RD</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; margin-top:8px;">
+            <div style="background:white; border-radius:8px; padding:8px; font-size:0.65rem; color:var(--navy); font-weight:600; text-align:center;">📏 Mide tu sala primero</div>
+            <div style="background:white; border-radius:8px; padding:8px; font-size:0.65rem; color:var(--navy); font-weight:600; text-align:center;">🎨 Elige el color base</div>
+            <div style="background:white; border-radius:8px; padding:8px; font-size:0.65rem; color:var(--navy); font-weight:600; text-align:center;">🪡 Revisa el material</div>
+            <div style="background:white; border-radius:8px; padding:8px; font-size:0.65rem; color:var(--navy); font-weight:600; text-align:center;">💳 Pide el financiamiento</div>
+          </div>
+        </div>
+        <div class="post-overlay" style="background:transparent; padding-top:0;">
+          <div style="display:flex; justify-content:flex-end;">
+            <span style="background:var(--gold); color:white; font-size:0.65rem; font-weight:800; padding:4px 10px; border-radius:6px;">GUARDA ESTE POST 📌</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post 3: Antes/Después -->
+    <div>
+      <p style="font-size:0.75rem; font-weight:700; color:var(--gray); margin-bottom:8px; text-transform:uppercase;">Reel — Antes / Después</p>
+      <div class="post-preview" style="background:#1A1A2E;">
+        <div class="logo-badge">🦁 Leo Muebles</div>
+        <div class="post-img-area" style="flex-direction:column; gap:0; padding:20px;">
+          <div style="display:flex; width:100%; gap:4px; flex:1;">
+            <div style="flex:1; background:#374151; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:1.5rem;">
+              🏚️
+              <span style="color:#94a3b8; font-size:0.6rem; font-weight:700; margin-top:4px;">ANTES</span>
+            </div>
+            <div style="flex:1; background:linear-gradient(135deg,#1A3A5C,#2D5F8A); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:1.5rem;">
+              🏠✨
+              <span style="color:var(--gold); font-size:0.6rem; font-weight:700; margin-top:4px;">DESPUÉS</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-overlay" style="background:linear-gradient(to top, rgba(0,0,0,0.85) 50%, transparent); padding-top:0;">
+          <div class="post-tag" style="color:var(--gold);">✨ TRANSFORMACIÓN</div>
+          <div class="post-title" style="color:white;">Sala nueva desde RD$18,000</div>
+          <div class="post-sub" style="color:#94a3b8;">Con crédito, sin inicial</div>
+          <span class="post-cta" style="color:var(--navy);">📱 Escríbenos</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== INSTAGRAM GRID PREVIEW ===== -->
+<div class="section">
+  <div class="section-title">📸 Vista Previa del Feed de Instagram</div>
+  <p style="color:var(--gray); margin-bottom:20px; font-size:0.9rem;">Alternancia de colores y formatos para un feed visualmente cohesivo. Patrón recomendado: Inspiración → Oferta → Educativo → Inspiración...</p>
+  <div class="ig-grid">
+    <div class="ig-cell" style="background:linear-gradient(135deg,#1A3A5C,#0D2137); font-size:1.8rem;">🛋️<span>Sala</span></div>
+    <div class="ig-cell" style="background:linear-gradient(135deg,#F5A623,#e08c00);">
+      <div style="text-align:center; color:white; padding:8px;">
+        <div style="font-size:0.55rem; font-weight:800; text-transform:uppercase; margin-bottom:2px;">OFERTA</div>
+        <div style="font-size:0.9rem; font-weight:900; line-height:1.1;">RD$<br>15,900</div>
+      </div>
+      <span>Sofá</span>
+    </div>
+    <div class="ig-cell" style="background:#FFF8F0;">
+      <div style="text-align:center; color:var(--navy); padding:8px; font-size:0.5rem; font-weight:700; line-height:1.4;">5 COSAS QUE DEBES SABER ANTES DE COMPRAR UN SOFÁ<span style="display:block; color:var(--gold);">Tips Leo Muebles</span></div>
+      <span style="color:var(--navy);">Tips</span>
+    </div>
+    <div class="ig-cell" style="background:linear-gradient(135deg,#D64045,#a83032); font-size:1.8rem;">🛏️<span>Dormitorio</span></div>
+    <div class="ig-cell" style="background:linear-gradient(135deg,#1A3A5C,#2D5F8A); font-size:1.2rem;">
+      <div style="text-align:center; color:white; padding:8px;">
+        <div style="font-size:0.5rem; font-weight:800; text-transform:uppercase; margin-bottom:2px; color:var(--gold);">ANTES / DESPUÉS</div>
+        <div style="font-size:1.5rem;">🏠✨</div>
+      </div>
+      <span>Transform</span>
+    </div>
+    <div class="ig-cell" style="background:#F5A623; font-size:1.8rem;">❄️<span>Nevera</span></div>
+    <div class="ig-cell" style="background:#FFF8F0;">
+      <div style="text-align:center; padding:8px;">
+        <div style="font-size:1rem;">⭐⭐⭐⭐⭐</div>
+        <div style="font-size:0.45rem; font-weight:700; color:var(--navy); line-height:1.4;">"Excelente servicio, cuotas accesibles"</div>
+        <div style="font-size:0.4rem; color:var(--gray);">— Carmen R., SDQ</div>
+      </div>
+      <span style="color:var(--navy);">Review</span>
+    </div>
+    <div class="ig-cell" style="background:linear-gradient(135deg,#1A3A5C,#0D2137); font-size:1.8rem;">🍽️<span>Comedor</span></div>
+    <div class="ig-cell" style="background:linear-gradient(135deg,#D64045,#F5A623); font-size:0.7rem; font-weight:800; color:white; text-align:center; padding:8px; line-height:1.3;">🌬️ A/C 12,000 BTU<br><span style="font-size:1.1rem;">RD$15,500</span><br><span style="font-size:0.55rem; opacity:0.9;">con instalación</span><span style="display:block;">Oferta</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== AD MOCKUPS ===== -->
+<div class="section">
+  <div class="section-title">📢 Mockups de Meta Ads (Facebook & Instagram)</div>
+  <div class="ad-grid">
+    <!-- Ad 1 -->
+    <div class="ad-card">
+      <div class="ad-header">
+        <div class="ad-avatar">LM</div>
+        <div>
+          <div class="ad-name">Leo Muebles</div>
+          <div class="ad-sponsored">Patrocinado · 🌍</div>
+        </div>
+      </div>
+      <div class="ad-image" style="background:linear-gradient(135deg,#1A3A5C,#2D5F8A);">🛋️</div>
+      <div class="ad-body">
+        <div class="ad-headline">Sofás desde RD$15,900 en cuotas</div>
+        <div class="ad-text">Renueva tu sala sin romper el presupuesto. Crédito disponible en Leo Muebles. Entrega en Santo Domingo y Santiago.</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
+          <div style="font-size:0.75rem; color:var(--gray);">leomuebles.com</div>
+          <button class="ad-cta-btn" style="width:auto; padding:8px 20px; font-size:0.8rem;">Enviar Mensaje</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ad 2: Carrusel style -->
+    <div class="ad-card">
+      <div class="ad-header">
+        <div class="ad-avatar">LM</div>
+        <div>
+          <div class="ad-name">Leo Muebles</div>
+          <div class="ad-sponsored">Patrocinado · 🌍</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:2px; height:180px;">
+        <div style="flex:1; background:linear-gradient(135deg,#F5A623,#e08c00); display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; padding:10px; text-align:center;">
+          <div style="font-size:2rem;">❄️</div>
+          <div style="font-size:0.65rem; font-weight:700; margin-top:4px;">Nevera 18 pies</div>
+          <div style="font-size:0.9rem; font-weight:900;">RD$19,900</div>
+        </div>
+        <div style="flex:1; background:linear-gradient(135deg,#1A3A5C,#0D2137); display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; padding:10px; text-align:center;">
+          <div style="font-size:2rem;">🌬️</div>
+          <div style="font-size:0.65rem; font-weight:700; margin-top:4px;">A/C 12,000 BTU</div>
+          <div style="font-size:0.9rem; font-weight:900;">RD$15,500</div>
+        </div>
+        <div style="flex:1; background:linear-gradient(135deg,#D64045,#a83032); display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; padding:10px; text-align:center;">
+          <div style="font-size:2rem;">🛏️</div>
+          <div style="font-size:0.65rem; font-weight:700; margin-top:4px;">Juego Dormit.</div>
+          <div style="font-size:0.9rem; font-weight:900;">RD$22,000</div>
+        </div>
+      </div>
+      <div class="ad-body">
+        <div class="ad-headline">Todo para tu hogar con crédito en RD</div>
+        <div class="ad-text">Muebles y electrodomésticos. Cuotas desde RD$800/semana. Aprobación rápida.</div>
+        <button class="ad-cta-btn">Ver Catálogo Completo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== WHATSAPP MOCKUP ===== -->
+<div class="section">
+  <div class="section-title">💬 Mockup de WhatsApp Business</div>
+  <div style="display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap;">
+    <div class="wa-mockup">
+      <div class="wa-header">
+        <div class="wa-avatar">🦁</div>
+        <div>
+          <div class="wa-name">Leo Muebles</div>
+          <div class="wa-status">en línea</div>
+        </div>
+      </div>
+      <div class="wa-msg">
+        <div class="wa-text">¡Hola! 👋 Bienvenido/a a <strong>Leo Muebles</strong> 🏠<br><br>¿En qué te podemos ayudar?</div>
+        <div class="wa-menu">
+          <div class="wa-option">1️⃣ Muebles</div>
+          <div class="wa-option">2️⃣ Electrodomésticos</div>
+          <div class="wa-option">3️⃣ Precios y Financiamiento</div>
+          <div class="wa-option">4️⃣ Sucursales y Horarios</div>
+        </div>
+        <div class="wa-time">09:32 ✓✓</div>
+      </div>
+      <div class="wa-msg wa-msg-out">
+        <div class="wa-text">3</div>
+        <div class="wa-time">09:33 ✓✓</div>
+      </div>
+      <div class="wa-msg">
+        <div class="wa-text">¡Esta es la parte que les encanta! 💰<br><br>En Leo Muebles tienes:<br>💳 <strong>Pago contado</strong> — con descuento<br>📅 <strong>Cuotas semanales</strong><br>📅 <strong>Cuotas quincenales</strong><br>✅ <strong>Aprobación rápida</strong><br><br>¿Qué pieza te interesa? Te calculo las cuotas ahora 😊</div>
+        <div class="wa-time">09:33 ✓✓</div>
+      </div>
+    </div>
+
+    <div>
+      <p style="font-size:0.85rem; color:var(--gray); margin-bottom:16px; max-width:340px;"><strong>Configuración del perfil WhatsApp Business:</strong></p>
+      <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.08); max-width:340px;">
+        <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+          <div style="width:60px; height:60px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0;">🦁</div>
+          <div>
+            <div style="font-weight:800; color:var(--navy);">Leo Muebles</div>
+            <div style="font-size:0.75rem; color:var(--gray);">Muebles y Electrodomésticos RD</div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem; color:#374151; line-height:1.6; border-top:1px solid #F3F4F6; padding-top:12px;">
+          <div style="margin-bottom:8px;"><span style="color:var(--gold);">●</span> <strong>Descripción:</strong> Tu tienda de muebles y electrodomésticos en RD. Crédito disponible. Entrega a domicilio.</div>
+          <div style="margin-bottom:8px;"><span style="color:var(--gold);">●</span> <strong>Horario:</strong> Lun-Vie 9am-7pm | Sáb 9am-6pm</div>
+          <div style="margin-bottom:8px;"><span style="color:var(--gold);">●</span> <strong>Catálogo:</strong> 15 productos activos con precio</div>
+          <div><span style="color:var(--gold);">●</span> <strong>Resp. automática:</strong> Activa (mensaje 0)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== VOZ DE MARCA ===== -->
+<div class="section">
+  <div class="section-title">🗣️ Voz y Tono de Marca — Ejemplos</div>
+  <div class="voice-grid">
+    <div class="voice-card correct">
+      <div class="voice-label correct">✅ Así sí habla Leo Muebles</div>
+      <div class="voice-text">"¿Buscas renovar tu sala? En Leo Muebles tenemos sofás desde RD$15,900 con cuotas que se ajustan a tu quincena. ¡Escríbenos y te ayudamos a elegir!"</div>
+    </div>
+    <div class="voice-card wrong">
+      <div class="voice-label wrong">❌ Así no habla Leo Muebles</div>
+      <div class="voice-text">"Estimado cliente, nos complace informarle que contamos con una amplia gama de artículos de mobiliario a precios competitivos en el mercado dominicano."</div>
+    </div>
+    <div class="voice-card correct">
+      <div class="voice-label correct">✅ Así sí — WhatsApp</div>
+      <div class="voice-text">"¡Hola Carmen! 🌟 Ese sofá que me preguntaste todavía está disponible. Esta semana lo tenemos a RD$13,500 (normalmente RD$15,900). ¿Te lo aparto con poco?"</div>
+    </div>
+    <div class="voice-card wrong">
+      <div class="voice-label wrong">❌ Así no — WhatsApp</div>
+      <div class="voice-text">"Buenos días. Quisiera informarle que el producto de su interés continúa disponible en nuestro inventario a un precio especial por tiempo limitado."</div>
+    </div>
+  </div>
+  <div style="background:white; border-radius:16px; padding:24px; margin-top:20px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+    <div style="font-weight:700; color:var(--navy); margin-bottom:12px;">5 Adjetivos de la Marca</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <span class="badge badge-gold">Cercano</span>
+      <span class="badge badge-gold">Honesto</span>
+      <span class="badge badge-gold">Alegre</span>
+      <span class="badge badge-gold">Práctico</span>
+      <span class="badge badge-navy">Orgulloso de RD</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== TIKTOK MOCKUP ===== -->
+<div class="section">
+  <div class="section-title">🎵 Mockup de TikTok</div>
+  <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:flex-start;">
+    <div class="tiktok-mockup">
+      <div class="tt-video" style="background:linear-gradient(135deg,#1A3A5C,#2D5F8A);">🛋️</div>
+      <div class="tt-overlay"></div>
+      <div class="tt-info">
+        <div class="tt-username">@leomuebles.rd</div>
+        <div class="tt-caption">POV: entras a Leo Muebles con la quincena en mano 💰🛋️ #MueblesRD #LeoMuebles #TikTokRD</div>
+        <div class="tt-audio">🎵 Trending audio RD</div>
+      </div>
+      <div class="tt-actions">
+        <div class="tt-action"><span class="tt-action-icon">❤️</span>2.3k</div>
+        <div class="tt-action"><span class="tt-action-icon">💬</span>89</div>
+        <div class="tt-action"><span class="tt-action-icon">↗️</span>412</div>
+        <div class="tt-action"><span class="tt-action-icon">🔖</span>234</div>
+      </div>
+      <div class="tt-bar">
+        <div class="tt-nav">🏠<div>Inicio</div></div>
+        <div class="tt-nav">🔍<div>Buscar</div></div>
+        <div class="tt-nav" style="color:var(--red);">➕<div>Crear</div></div>
+        <div class="tt-nav">📥<div>Bandeja</div></div>
+        <div class="tt-nav">👤<div>Perfil</div></div>
+      </div>
+    </div>
+    <div style="max-width:380px;">
+      <p style="font-weight:700; color:var(--navy); margin-bottom:16px;">Fórmula de videos TikTok para Leo Muebles:</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid var(--gold);">
+          <div style="font-size:0.7rem; font-weight:800; color:var(--gold); text-transform:uppercase; margin-bottom:4px;">0-3 segundos — HOOK (obligatorio)</div>
+          <div style="font-size:0.85rem; color:#374151;">"POV: entras a Leo Muebles con la quincena en mano 💰"<br><em style="color:var(--gray);">"El error que comete el 80% al comprar sofá"</em></div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid var(--navy);">
+          <div style="font-size:0.7rem; font-weight:800; color:var(--navy); text-transform:uppercase; margin-bottom:4px;">3-50 segundos — CONTENIDO</div>
+          <div style="font-size:0.85rem; color:#374151;">Tour de tienda, antes/después, tips educativos, comparativa de productos, unboxing/armado</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid var(--red);">
+          <div style="font-size:0.7rem; font-weight:800; color:var(--red); text-transform:uppercase; margin-bottom:4px;">Últimos 5 segundos — CTA</div>
+          <div style="font-size:0.85rem; color:#374151;">"Escríbenos al WhatsApp — link en bio" / "Visítanos en Santo Domingo"</div>
+        </div>
+        <div style="background:#F8FAFC; border-radius:12px; padding:16px; font-size:0.8rem; color:var(--gray);">
+          <strong>Hashtags:</strong> #LeoMuebles #MueblesRD #TikTokRD #HogarDominicano #DecoracionHogar #SalaGoals<br><br>
+          <strong>Frecuencia:</strong> 2-3 videos/semana<br>
+          <strong>Horario:</strong> Viernes y sábado 8pm-10pm (pico RD)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--navy); color:white; padding:40px; text-align:center; margin-top:60px;">
+  <div style="font-size:1.5rem; font-weight:800; margin-bottom:8px;">🦁 Leo Muebles</div>
+  <div style="color:#94a3b8; font-size:0.9rem; margin-bottom:16px;">"Tu hogar, a tu manera." — República Dominicana</div>
+  <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+    <span class="badge" style="background:rgba(245,166,35,0.2); color:var(--gold);">#F5A623 Dorado Leo</span>
+    <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">#1A3A5C Azul Confianza</span>
+    <span class="badge" style="background:rgba(214,64,69,0.3); color:#f87171;">#D64045 Rojo Energía</span>
+  </div>
+  <div style="color:#64748b; font-size:0.75rem; margin-top:20px;">Referencias visuales generadas el 13 de mayo de 2026 · Abrir en navegador para mejor visualización</div>
+</div>
+
+</body>
+</html>

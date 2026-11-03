@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carteles de Muebles 11x17</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;600;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ui-bg:#f3f1ec; --ui-panel:#ffffff; --ui-ink:#1d1d1f; --ui-muted:#6b6b70; --ui-line:#dcd8cf; --ui-accent:#1f4d3a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --ui-bg:#17181a; --ui-panel:#222326; --ui-ink:#f1f1f1; --ui-muted:#a3a3a8; --ui-line:#38393d; --ui-accent:#7fc4a2; }
+}
+:root[data-theme="dark"]{ --ui-bg:#17181a; --ui-panel:#222326; --ui-ink:#f1f1f1; --ui-muted:#a3a3a8; --ui-line:#38393d; --ui-accent:#7fc4a2; }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--ui-bg);color:var(--ui-ink);font-family:Montserrat,system-ui,sans-serif}
+.app{display:grid;grid-template-columns:380px 1fr;min-height:100vh}
+.panel{background:var(--ui-panel);border-right:1px solid var(--ui-line);padding:20px 18px;overflow:auto;max-height:100vh;position:sticky;top:0}
+.panel h1{font-size:18px;margin:0 0 4px}
+.panel p.hint{font-size:12px;color:var(--ui-muted);margin:0 0 16px;line-height:1.4}
+.list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.list button{border:1px solid var(--ui-line);background:transparent;color:var(--ui-ink);padding:6px 10px;border-radius:6px;font:600 12px Montserrat,sans-serif;cursor:pointer}
+.list button.on{background:var(--ui-accent);color:var(--ui-panel);border-color:var(--ui-accent)}
+.row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.btn{border:0;background:var(--ui-accent);color:var(--ui-panel);padding:9px 12px;border-radius:7px;font:700 13px Montserrat,sans-serif;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ui-ink);border:1px solid var(--ui-line)}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ui-muted);margin:12px 0 4px}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-bg);color:var(--ui-ink);font:14px Montserrat,sans-serif}
+textarea{min-height:84px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stage{padding:24px;display:flex;flex-direction:column;align-items:center;gap:24px;overflow:auto}
+.frame{width:calc(11in * var(--s));height:calc(17in * var(--s));box-shadow:0 10px 30px rgba(0,0,0,.18);flex:none}
+.frame .sign{transform:scale(var(--s));transform-origin:top left}
+.size-note{font-size:12px;color:var(--ui-muted)}
+
+/* ============ SIGN (11 x 17 in) ============ */
+.sign{width:11in;height:17in;position:relative;overflow:hidden;display:flex;flex-direction:column;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sign .feat{list-style:none;padding:0;margin:0}
+.sign .feat li{position:relative}
+
+/* --- Elegante --- */
+.t-elegante{background:#f7f2e8;color:#22302a;padding:.75in;font-family:Montserrat,sans-serif}
+.t-elegante::before{content:"";position:absolute;inset:.35in;border:3px solid #b08d4c;pointer-events:none}
+.t-elegante::after{content:"";position:absolute;inset:.5in;border:1px solid #b08d4c;pointer-events:none}
+.t-elegante .store{text-align:center;font:600 22pt Montserrat;letter-spacing:.3em;text-transform:uppercase;color:#b08d4c;margin-top:.35in}
+.t-elegante .cat{text-align:center;font:800 30pt Montserrat;letter-spacing:.18em;text-transform:uppercase;margin-top:.9in;color:#1f4d3a}
+.t-elegante .name{text-align:center;font:italic 600 76pt/1.05 "Playfair Display",serif;margin:.25in 0 .15in}
+.t-elegante .incl{text-align:center;font:600 26pt Montserrat;color:#5a6a62}
+.t-elegante .rule{width:3in;height:3px;background:#b08d4c;margin:.6in auto}
+.t-elegante .feat{margin:0 auto;width:7.6in}
+.t-elegante .feat li{font:400 24pt/1.35 Montserrat;padding-left:.55in;margin-bottom:.12in}
+.t-elegante .feat li::before{content:"◆";position:absolute;left:0;color:#b08d4c;font-size:18pt;top:.06in}
+.t-elegante .prices{margin-top:auto;text-align:center}
+.t-elegante .reg{font:600 30pt Montserrat;color:#7b857f;text-decoration:line-through}
+.t-elegante .price{font:800 150pt/1 "Playfair Display",serif;color:#1f4d3a}
+.t-elegante .price small{font-size:60pt;vertical-align:top;line-height:1.6}
+.t-elegante .fin{display:inline-block;margin-top:.45in;background:#1f4d3a;color:#f7f2e8;font:700 22pt Montserrat;padding:.14in .4in;letter-spacing:.06em}
+.t-elegante .foot{text-align:center;font:600 18pt Montserrat;color:#5a6a62;margin:.4in 0 .3in}
+
+/* --- Oferta --- */
+.t-oferta{background:#fff;color:#111;font-family:Montserrat,sans-serif}
+.t-oferta .top{background:#d7191c;color:#fff;text-align:center;padding:.45in .5in .5in}
+.t-oferta .store{font:800 20pt Montserrat;letter-spacing:.25em;text-transform:uppercase;opacity:.9}
+.t-oferta .badge{font:400 128pt/1 Anton,Impact,sans-serif;letter-spacing:.02em;margin-top:.15in;text-transform:uppercase}
+.t-oferta .band{background:#ffd200;color:#111;text-align:center;font:400 40pt Anton,Impact,sans-serif;letter-spacing:.06em;padding:.16in;text-transform:uppercase}
+.t-oferta .body{padding:.55in .7in 0;display:flex;flex-direction:column;flex:1}
+.t-oferta .name{font:400 72pt/1.02 Anton,Impact,sans-serif;text-transform:uppercase}
+.t-oferta .incl{font:800 28pt Montserrat;color:#d7191c;margin:.15in 0 .4in}
+.t-oferta .feat li{font:600 24pt/1.35 Montserrat;padding-left:.6in;margin-bottom:.1in}
+.t-oferta .feat li::before{content:"✔";position:absolute;left:0;color:#d7191c;font-weight:800}
+.t-oferta .prices{margin-top:auto;text-align:center;padding-bottom:.2in}
+.t-oferta .reg{font:700 30pt Montserrat;color:#666}
+.t-oferta .reg s{text-decoration-thickness:4px;text-decoration-color:#d7191c}
+.t-oferta .price{font:400 190pt/1 Anton,Impact,sans-serif;color:#d7191c}
+.t-oferta .price small{font-size:80pt;vertical-align:top;line-height:1.5}
+.t-oferta .fin{font:800 24pt Montserrat;text-transform:uppercase}
+.t-oferta .foot{background:#111;color:#fff;text-align:center;font:700 18pt Montserrat;padding:.25in}
+
+/* --- Moderno --- */
+.t-moderno{background:#fff;color:#111;font-family:Montserrat,sans-serif;padding:.8in .8in .6in}
+.t-moderno .store{font:800 18pt Montserrat;letter-spacing:.35em;text-transform:uppercase}
+.t-moderno .bar{height:14px;background:#111;margin:.25in 0 1in;width:2.2in}
+.t-moderno .cat{font:600 24pt Montserrat;letter-spacing:.2em;text-transform:uppercase;color:#777}
+.t-moderno .name{font:800 92pt/.98 Montserrat;letter-spacing:-.02em;margin:.2in 0 .25in;text-transform:uppercase}
+.t-moderno .incl{font:600 28pt Montserrat;border-left:10px solid #111;padding-left:.25in}
+.t-moderno .feat{margin-top:.7in}
+.t-moderno .feat li{font:400 24pt/1.35 Montserrat;padding:.12in 0;border-bottom:2px solid #e5e5e5}
+.t-moderno .prices{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;border-top:14px solid #111;padding-top:.3in}
+.t-moderno .reg{font:600 26pt Montserrat;color:#777;text-decoration:line-through}
+.t-moderno .fin{font:700 20pt Montserrat;margin-top:.1in;max-width:4.5in}
+.t-moderno .price{font:800 124pt/1 Montserrat;letter-spacing:-.04em}
+.t-moderno .price small{font-size:56pt;vertical-align:top;line-height:1.5}
+.t-moderno .foot{font:600 16pt Montserrat;color:#777;margin-top:.35in}
+
+.price.blank{display:flex;align-items:flex-end;justify-content:center;gap:.15in}
+.price.blank .line{display:inline-block;width:5.2in;border-bottom:6px solid currentColor;height:1.3in}
+.t-moderno .price.blank .line{width:3.6in}
+.empty{display:none !important}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .panel{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--ui-line);padding:16px}
+  .stage{padding:16px}
+}
+
+@page{size:11in 17in;margin:0}
+@media print{
+  body{background:#fff}
+  .panel,.size-note{display:none !important}
+  .app{display:block}
+  .stage{padding:0;display:block}
+  .frame{width:11in;height:17in;box-shadow:none;page-break-after:always;break-after:page}
+  .frame:last-child{page-break-after:auto;break-after:auto}
+  .frame .sign{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <h1>Carteles 11 × 17 in</h1>
+    <p class="hint">Para colocar encima de comedores y juegos de muebles. Edita los campos, agrega un cartel por cada juego y presiona <b>Imprimir</b> (papel Tabloide / 11×17, márgenes "Ninguno", activar "Gráficos de fondo").</p>
+
+    <div class="list" id="list"></div>
+    <div class="row">
+      <button class="btn" id="add">+ Nuevo cartel</button>
+      <button class="btn ghost" id="dup">Duplicar</button>
+      <button class="btn ghost" id="del">Eliminar</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="print">🖨 Imprimir todos</button>
+      <label style="display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ui-ink)">
+        <input type="checkbox" id="onlyOne" style="width:auto"> Solo el seleccionado
+      </label>
+    </div>
+
+    <label for="f-tpl">Diseño</label>
+    <select id="f-tpl">
+      <option value="elegante">Elegante (crema y dorado)</option>
+      <option value="oferta">Oferta (rojo y amarillo)</option>
+      <option value="moderno">Moderno (blanco y negro)</option>
+    </select>
+
+    <label for="f-store">Nombre de la tienda</label>
+    <input id="f-store">
+
+    <div class="two">
+      <div><label for="f-cat">Categoría</label><input id="f-cat"></div>
+      <div><label for="f-badge">Título oferta</label><input id="f-badge"></div>
+    </div>
+
+    <label for="f-name">Nombre / modelo del juego</label>
+    <input id="f-name">
+
+    <label for="f-incl">Qué incluye</label>
+    <input id="f-incl">
+
+    <label for="f-feat">Características (una por línea)</label>
+    <textarea id="f-feat"></textarea>
+
+    <div class="two">
+      <div><label for="f-reg">Precio regular</label><input id="f-reg" inputmode="decimal"></div>
+      <div><label for="f-price">Precio especial</label><input id="f-price" inputmode="decimal"></div>
+    </div>
+
+    <label for="f-fin">Financiamiento / nota</label>
+    <input id="f-fin">
+
+    <label for="f-foot">Pie de cartel (teléfono, web, aviso)</label>
+    <input id="f-foot">
+  </aside>
+
+  <main class="stage" id="stage"></main>
+</div>
+
+<script>
+const KEY = "carteles-muebles-11x17-v1";
+const defaults = [
+  { tpl:"elegante", store:"Tu Mueblería", cat:"Juego de Comedor", badge:"Oferta", name:"Modelo Toscana",
+    incl:"Mesa + 6 sillas", feat:"Madera sólida con acabado nogal\nSillas tapizadas en tela antimanchas\nMesa de 72\" × 40\"\nEntrega y armado disponible",
+    reg:"", price:"", fin:"Pregunte por nuestro financiamiento", foot:"Pregunte a un asociado por más detalles" },
+  { tpl:"oferta", store:"Tu Mueblería", cat:"Juego de Sala", badge:"¡Oferta!", name:"Sala Milán",
+    incl:"Sofá + Loveseat + Sillón", feat:"Tela suave de alta resistencia\nCojines de espuma de alta densidad\nVarios colores disponibles\nLlévatelo hoy mismo",
+    reg:"", price:"", fin:"Sin crédito necesario · Pagos semanales", foot:"Precio válido mientras dure la existencia" },
+  { tpl:"moderno", store:"Tu Mueblería", cat:"Juego de Recámara", badge:"Nuevo", name:"Nórdico",
+    incl:"Cama Queen + Cómoda + Espejo + Buró", feat:"Diseño contemporáneo de líneas limpias\nCajones con correderas suaves\nAcabado gris roble\nColchón se vende por separado",
+    reg:"", price:"", fin:"Aparta con un pequeño depósito", foot:"Pregunte a un asociado por más detalles" },
+];
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)); } catch(e) { state = null; }
+if (!state || !Array.isArray(state.signs) || !state.signs.length) state = { signs: structuredClone(defaults), cur: 0 };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} };
+
+const fields = ["tpl","store","cat","badge","name","incl","feat","reg","price","fin","foot"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function money(v){
+  const t = String(v||"").trim();
+  if (!t) return "";
+  const n = parseFloat(t.replace(/[^0-9.]/g,""));
+  if (isNaN(n)) return esc(t);
+  const whole = Math.floor(n).toLocaleString("en-US");
+  const cents = Math.round((n % 1) * 100);
+  return `<small>$</small>${whole}${cents ? `<small>.${String(cents).padStart(2,"0")}</small>` : ""}`;
+}
+function regTxt(v){ const t = String(v||"").trim(); if(!t) return ""; const n = parseFloat(t.replace(/[^0-9.]/g,"")); return isNaN(n) ? esc(t) : "$" + n.toLocaleString("en-US",{maximumFractionDigits:2}); }
+const E = (cls, html, tag="div") => `<${tag} class="${cls}${html ? "" : " empty"}">${html || ""}</${tag}>`;
+
+function render(s){
+  const feats = String(s.feat||"").split("\n").map(x=>x.trim()).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("");
+  const price = money(s.price), reg = regTxt(s.reg);
+  const priceBlock = price ? `<div class="price">${price}</div>` : `<div class="price blank"><small>$</small><span class="line"></span></div>`;
+  if (s.tpl === "oferta") return `
+    <div class="sign t-oferta">
+      <div class="top">${E("store", esc(s.store))}${E("badge", esc(s.badge))}</div>
+      ${E("band", esc(s.cat))}
+      <div class="body">
+        ${E("name", esc(s.name))}${E("incl", esc(s.incl))}
+        <ul class="feat">${feats}</ul>
+        <div class="prices">${reg ? `<div class="reg">Antes <s>${reg}</s></div>` : ""}${priceBlock}${E("fin", esc(s.fin))}</div>
+      </div>
+      ${E("foot", esc(s.foot))}
+    </div>`;
+  if (s.tpl === "moderno") return `
+    <div class="sign t-moderno">
+      ${E("store", esc(s.store))}<div class="bar"></div>
+      ${E("cat", esc(s.cat))}${E("name", esc(s.name))}${E("incl", esc(s.incl))}
+      <ul class="feat">${feats}</ul>
+      <div class="prices"><div>${reg ? `<div class="reg">${reg}</div>` : ""}${E("fin", esc(s.fin))}</div>${priceBlock}</div>
+      ${E("foot", esc(s.foot))}
+    </div>`;
+  return `
+    <div class="sign t-elegante">
+      ${E("store", esc(s.store))}${E("cat", esc(s.cat))}${E("name", esc(s.name))}${E("incl", esc(s.incl))}
+      <div class="rule"></div>
+      <ul class="feat">${feats}</ul>
+      <div class="prices">${reg ? `<div class="reg">Precio regular ${reg}</div>` : ""}${priceBlock}${s.fin ? `<div class="fin">${esc(s.fin)}</div>` : ""}</div>
+      ${E("foot", esc(s.foot))}
+    </div>`;
+}
+
+function fitScale(){
+  const stage = $("stage");
+  const w = stage.clientWidth - 48;
+  const h = window.innerHeight - 48;
+  const s = Math.max(0.2, Math.min(w / (11*96), h / (17*96), 0.75));
+  stage.style.setProperty("--s", s.toFixed(3));
+}
+
+function draw(){
+  const only = $("onlyOne").checked;
+  $("list").innerHTML = state.signs.map((s,i)=>`<button data-i="${i}" class="${i===state.cur?"on":""}">${i+1}. ${esc(s.name||"Sin nombre")}</button>`).join("");
+  $("stage").innerHTML = state.signs.map((s,i)=>
+    (only && i!==state.cur) ? "" :
+    `<div class="frame" data-i="${i}">${render(s)}</div>`).join("") +
+    `<div class="size-note">Vista previa a escala · tamaño real 11 × 17 pulgadas (Tabloide)</div>`;
+  fitScale();
+}
+function loadForm(){ const s = state.signs[state.cur]; fields.forEach(f => $("f-"+f).value = s[f] ?? ""); }
+
+fields.forEach(f => $("f-"+f).addEventListener("input", e => { state.signs[state.cur][f] = e.target.value; save(); draw(); }));
+$("list").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; state.cur = +b.dataset.i; save(); loadForm(); draw();
+  const fr = document.querySelector(`.frame[data-i="${state.cur}"]`); if (fr) fr.scrollIntoView({behavior:"smooth",block:"start"}); });
+$("add").onclick = () => { state.signs.push({...structuredClone(defaults[0]), name:"Nuevo juego"}); state.cur = state.signs.length-1; save(); loadForm(); draw(); };
+$("dup").onclick = () => { state.signs.splice(state.cur+1,0,structuredClone(state.signs[state.cur])); state.cur++; save(); loadForm(); draw(); };
+$("del").onclick = () => { if (state.signs.length<2) return; state.signs.splice(state.cur,1); state.cur = Math.max(0,state.cur-1); save(); loadForm(); draw(); };
+$("onlyOne").onchange = draw;
+$("print").onclick = () => window.print();
+window.addEventListener("resize", fitScale);
+
+loadForm(); draw();
+</script>
+</body>
+</html>

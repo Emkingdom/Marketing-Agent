@@ -375,6 +375,7 @@ const FCATS = [
 const FCAT = Object.fromEntries(FCATS.map(c => [c.id, c]));
 const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
 const ICATS = [
+  { id: 'ventas', n: 'Ventas y cobros del día' },
   { id: 'contado', n: 'Ventas de contado' },
   { id: 'inicial', n: 'Iniciales de ventas a crédito' },
   { id: 'abonos', n: 'Abonos y cuotas de clientes' },
@@ -383,6 +384,7 @@ const ICATS = [
 ];
 const GCAT = Object.fromEntries(GCATS.map(c => [c.id, c]));
 const ICAT = Object.fromEntries(ICATS.map(c => [c.id, c]));
+const IMETS = [['efectivo', 'Efectivo'], ['transferencia', 'Transferencia'], ['tarjeta', 'Tarjeta'], ['cheque', 'Cheque']];
 const catName = g => tipoOf(g) === 'fondo' ? (FCAT[g.cat]?.n || 'Otros ahorros') : tipoOf(g) === 'deposito' ? 'Depósito bancario' : tipoOf(g) === 'ingreso' ? (ICAT[g.cat]?.n || 'Otros ingresos') : (GCAT[g.cat]?.n || 'Otros gastos');
 const tipoOf = g => (g.cat && FCAT[g.cat]) ? 'fondo' : (g.tipo || 'gasto');
 const METODOS = {
@@ -426,7 +428,7 @@ const items = m => Object.values(monthDoc(m).items || {}).filter(g => g && g.mon
 const shares = g => g.suc === 'all' ? SUCS.map(s => [s, g.monto / 3]) : SUCS.includes(g.suc) ? [[g.suc, g.monto]] : [];
 const z = () => ({ s1: 0, s2: 0, s3: 0 });
 function calc(m) {
-  const r = { gas: z(), ing: z(), dep: z(), fon: z(), fcat: {}, tf: 0, gcat: {}, icat: {}, fijo: 0, variable: 0, personal: 0, fondo: 0, tg: 0, ti: 0, td: 0, n: 0, sinComp: 0,
+  const r = { gas: z(), ing: z(), dep: z(), fon: z(), fcat: {}, tf: 0, imet: {}, gcat: {}, icat: {}, fijo: 0, variable: 0, personal: 0, fondo: 0, tg: 0, ti: 0, td: 0, n: 0, sinComp: 0,
     caja: { s1: { cob: 0, gas: 0, dep: 0, fon: 0 }, s2: { cob: 0, gas: 0, dep: 0, fon: 0 }, s3: { cob: 0, gas: 0, dep: 0, fon: 0 } } };
   for (const g of items(m)) {
     const tp = tipoOf(g); r.n++;
@@ -435,7 +437,7 @@ function calc(m) {
       for (const [s, a] of shares(g)) { r.gas[s] += a; const row = (r.gcat[c] ||= { ...z(), t: 0 }); row[s] += a; row.t += a; if (g.metodo === 'efectivo') r.caja[s].gas += a; }
     } else if (tp === 'ingreso') {
       const c = ICAT[g.cat] ? g.cat : 'otros_i'; r.ti += g.monto;
-      for (const [s, a] of shares(g)) { r.ing[s] += a; const row = (r.icat[c] ||= { ...z(), t: 0 }); row[s] += a; row.t += a; if (g.metodo === 'efectivo' || g.metodo === 'cheque') r.caja[s].cob += a; }
+      for (const [s, a] of shares(g)) { r.ing[s] += a; const row = (r.icat[c] ||= { ...z(), t: 0 }); row[s] += a; row.t += a; const mr = (r.imet[g.metodo || 'efectivo'] ||= { ...z(), t: 0 }); mr[s] += a; mr.t += a; if (g.metodo === 'efectivo' || g.metodo === 'cheque') r.caja[s].cob += a; }
     } else if (tp === 'fondo') {
       const c = FCAT[g.cat] ? g.cat : 'fondos'; r.tf += g.monto;
       for (const [s, a] of shares(g)) { r.fon[s] += a; const row = (r.fcat[c] ||= { ...z(), t: 0 }); row[s] += a; row.t += a; if (g.metodo === 'efectivo') r.caja[s].fon += a; }
@@ -642,6 +644,7 @@ function renderResumen() {
   v.innerHTML = `<p class="hint" style="margin:0">Toca cualquier número o categoría subrayada para ver sus movimientos y editarlos.</p><div class="cards">${cards}${total}</div>
     <div class="grid2">
       <div class="stack">
+        <div class="panel"><div class="panel-head"><h2>Ingresos por forma de cobro</h2></div>${metTable(c)}</div>
         <div class="panel"><div class="panel-head"><h2>Ingresos por categoría</h2></div>${incTable(c)}</div>
         <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">Lo compartido se divide entre las 3</span></div>${gasTable(c)}</div>
         <div class="panel"><div class="panel-head"><h2>Fondos (ahorros)</h2><span class="hint">No se cuentan como gasto</span></div>${fonTable(c)}</div>
@@ -683,7 +686,7 @@ function specTitle(sp) {
   let t = sp.cash ? 'Efectivo y cheques' : sp.tipo ? T[sp.tipo] : sp.tipos ? sp.tipos.map(x => T[x]).join(' y ') : 'Movimientos';
   if (sp.cat) t = sp.tipo === 'ingreso' ? ICAT[sp.cat]?.n : sp.tipo === 'fondo' ? FCAT[sp.cat]?.n : GCAT[sp.cat]?.n;
   if (sp.grupo) t = GRUPOS[sp.grupo];
-  if (sp.metodo && !sp.cash) t += sp.tipo === 'ingreso' ? ' cobrados en efectivo y cheques' : ' pagados en efectivo';
+  if (sp.metodo && !sp.cash) t += sp.tipo === 'ingreso' ? (sp.metodo.length === 1 ? ' en ' + (Object.fromEntries(IMETS)[sp.metodo[0]] || sp.metodo[0]).toLowerCase() : ' cobrados en efectivo y cheques') : ' pagados en efectivo';
   if (sp.prov !== undefined) t = 'Depósitos · ' + (sp.prov || 'Sin cuenta asignada');
   if (sp.sinComp) t = 'Gastos sin comprobante';
   if (sp.sinMonto) t = 'Movimientos sin monto';
@@ -769,6 +772,13 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 
+function metTable(c) {
+  const rows = IMETS.filter(([k]) => c.imet[k]);
+  if (!rows.length) return `<p class="hint">Sin ingresos registrados este mes.</p>`;
+  return `<div class="scroll"><table><thead><tr><th>Forma de cobro</th>${SUCS.map(s => `<th class="r">${esc(name(s))}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
+    ${rows.map(([k, n]) => `<tr><td>${dl({ tipo: 'ingreso', metodo: [k] }, n)}</td>${SUCS.map(s => `<td class="r num">${c.imet[k][s] ? dl({ tipo: 'ingreso', metodo: [k], suc: s }, money(c.imet[k][s])) : '<span class="hint">—</span>'}</td>`).join('')}<td class="r num"><strong>${dl({ tipo: 'ingreso', metodo: [k] }, money(c.imet[k].t))}</strong><span class="cell-b">${pct(c.imet[k].t / c.ti)}</span></td></tr>`).join('')}
+    <tr class="foot"><td>${dl({ tipo: 'ingreso' }, 'Total')}</td>${SUCS.map(s => `<td class="r num">${c.ing[s] ? dl({ tipo: 'ingreso', suc: s }, money(c.ing[s])) : money(0)}</td>`).join('')}<td class="r num">${dl({ tipo: 'ingreso' }, money(c.ti))}</td></tr></tbody></table></div>`;
+}
 function incTable(c) {
   const rows = ICATS.filter(k => c.icat[k.id]);
   if (!rows.length) return `<p class="hint">Sin ingresos registrados este mes.</p>`;
@@ -968,6 +978,15 @@ async function savePay(fid) {
   } catch (x) { err.textContent = errMsg(x); }
 }
 
+function ingDayTable(byDay, days, dLabel, cellDl, c) {
+  const dd = days.filter(d => byDay[d].ing);
+  const mets = IMETS.filter(([k]) => c.imet[k]);
+  if (!dd.length) return '';
+  return `<div class="panel"><div class="panel-head"><h2>Ingresos por día · ${mLabel(S.mes)}</h2><span class="hint">Por forma de cobro y por sucursal. Toca una cifra para ver y editar</span></div>
+    <div class="scroll"><table><thead><tr><th>Día</th>${mets.map(([, n]) => `<th class="r">${n}</th>`).join('')}<th class="r">Total ingresos</th>${SUCS.map(s => `<th class="r">${esc(name(s))}</th>`).join('')}</tr></thead><tbody>
+    ${dd.map(d => { const r = byDay[d]; return `<tr><td>${dl({ dia: d, tipo: 'ingreso' }, dLabel(d))}</td>${mets.map(([k]) => `<td class="r num">${cellDl({ dia: d, tipo: 'ingreso', metodo: [k] }, r.im[k] || 0)}</td>`).join('')}<td class="r num"><strong>${cellDl({ dia: d, tipo: 'ingreso' }, r.ing)}</strong></td>${SUCS.map(s => `<td class="r num">${cellDl({ dia: d, tipo: 'ingreso', suc: s }, r.is[s])}</td>`).join('')}</tr>`; }).join('')}
+    <tr class="foot"><td>Total del mes</td>${mets.map(([k]) => `<td class="r num">${dl({ tipo: 'ingreso', metodo: [k] }, money(c.imet[k].t))}</td>`).join('')}<td class="r num">${dl({ tipo: 'ingreso' }, money(c.ti))}</td>${SUCS.map(s => `<td class="r num">${money(c.ing[s])}</td>`).join('')}</tr></tbody></table></div></div>`;
+}
 function renderFechas() {
   const v = $('#v-fechas');
   if (S.mode === 'loading') { v.innerHTML = '<div class="panel empty"><p>Cargando…</p></div>'; return; }
@@ -976,14 +995,15 @@ function renderFechas() {
     return `<tr${m === S.mes ? ' class="sub"' : ''}><td><button class="catbtn" data-mes-go="${m}" title="Ver este mes por día">${mLabel(m)}</button></td><td class="r num">${items(m).length}</td>${SUCS.map(s => `<td class="r num">${money(c.gas[s])}</td>`).join('')}<td class="r num"><strong>${money(c.tg)}</strong></td><td class="r num">${money(c.ti)}</td><td class="r num">${money(c.td)}</td><td class="r num">${money(c.tf)}</td><td class="r num ${res < 0 ? 'neg' : ''}">${money(res)}</td></tr>`; };
   const byDay = {};
   for (const g of items(S.mes)) {
-    const r = (byDay[g.fecha] ||= { n: 0, ing: 0, dep: 0, fon: 0, gas: z(), tg: 0 }), tp = tipoOf(g); r.n++;
-    if (tp === 'ingreso') r.ing += g.monto; else if (tp === 'deposito') r.dep += g.monto; else if (tp === 'fondo') r.fon += g.monto; else { r.tg += g.monto; for (const [s, a] of shares(g)) r.gas[s] += a; }
+    const r = (byDay[g.fecha] ||= { n: 0, ing: 0, dep: 0, fon: 0, gas: z(), tg: 0, im: {}, is: z() }), tp = tipoOf(g); r.n++;
+    if (tp === 'ingreso') { r.ing += g.monto; r.im[g.metodo || 'efectivo'] = (r.im[g.metodo || 'efectivo'] || 0) + g.monto; for (const [s, a] of shares(g)) r.is[s] += a; } else if (tp === 'deposito') r.dep += g.monto; else if (tp === 'fondo') r.fon += g.monto; else { r.tg += g.monto; for (const [s, a] of shares(g)) r.gas[s] += a; }
   }
   const days = Object.keys(byDay).sort().reverse(), c = calc(S.mes);
   const dLabel = d => { const dt = new Date(d + 'T12:00:00'), w = dt.toLocaleDateString('es', { weekday: 'long' }); return `${w[0].toUpperCase() + w.slice(1)} ${dt.getDate()}`; };
   const cellDl = (sp, val) => val ? dl(sp, money(val)) : '<span class="hint">—</span>';
   v.innerHTML = `<div class="panel"><div class="panel-head"><h2>Por mes</h2><span class="hint">Toca un mes para ver su detalle por día</span></div>
     ${meses.length ? `<div class="scroll"><table><thead><tr><th>Mes</th><th class="r">Mov.</th>${SUCS.map(s => `<th class="r">Gastos ${esc(name(s))}</th>`).join('')}<th class="r">Total gastos</th><th class="r">Ingresos</th><th class="r">Depósitos</th><th class="r">Fondos</th><th class="r">Resultado</th></tr></thead><tbody>${meses.map(mrow).join('')}</tbody></table></div>` : '<p class="hint">Aún no hay movimientos.</p>'}</div>
+    ${ingDayTable(byDay, days, dLabel, cellDl, c)}
     <div class="panel"><div class="panel-head"><h2>Por día · ${mLabel(S.mes)}</h2><span class="hint">Toca un día o una cifra para ver y editar sus movimientos</span></div>
     ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Mov.</th>${SUCS.map(s => `<th class="r">Gastos ${esc(name(s))}</th>`).join('')}<th class="r">Total gastos</th><th class="r">Ingresos</th><th class="r">Depósitos</th><th class="r">Fondos</th></tr></thead><tbody>
     ${days.map(d => { const r = byDay[d]; return `<tr><td>${dl({ dia: d }, dLabel(d))}</td><td class="r num">${r.n}</td>${SUCS.map(s => `<td class="r num">${cellDl({ dia: d, tipo: 'gasto', suc: s }, r.gas[s])}</td>`).join('')}<td class="r num"><strong>${cellDl({ dia: d, tipo: 'gasto' }, r.tg)}</strong></td><td class="r num">${cellDl({ dia: d, tipo: 'ingreso' }, r.ing)}</td><td class="r num">${cellDl({ dia: d, tipo: 'deposito' }, r.dep)}</td><td class="r num">${cellDl({ dia: d, tipo: 'fondo' }, r.fon)}</td></tr>`; }).join('')}

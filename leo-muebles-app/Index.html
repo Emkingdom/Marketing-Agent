@@ -401,7 +401,7 @@ const pct = p => (p * 100).toLocaleString('es-MX', { maximumFractionDigits: Math
 
 /* ---------- calculations ---------- */
 const monthDoc = m => S.months[m] || { items: {} };
-const items = m => Object.values(monthDoc(m).items || {}).filter(g => g && g.monto > 0);
+const items = m => Object.values(monthDoc(m).items || {}).filter(g => g && g.monto >= 0);
 const shares = g => g.suc === 'all' ? SUCS.map(s => [s, g.monto / 3]) : SUCS.includes(g.suc) ? [[g.suc, g.monto]] : [];
 const z = () => ({ s1: 0, s2: 0, s3: 0 });
 function calc(m) {
@@ -476,6 +476,8 @@ function alerts(m) {
     out.push({ act: { d: { tipos: ['ingreso', 'gasto'], suc: hi.s } }, l: 'info', tag: 'Eficiencia', t: `${name(hi.s)} gasta ${money(hi.r * 100, true)} por cada ${cur()}100 que ingresa; ${name(lo.s)} gasta ${money(lo.r * 100, true)}.` });
   }
   if (c.sinComp) out.push({ act: { d: { tipo: 'gasto', sinComp: true } }, l: 'info', tag: 'Comprobantes', t: `${c.sinComp} ${c.sinComp === 1 ? 'gasto no tiene' : 'gastos no tienen'} comprobante este mes.` });
+  const sinMonto = items(m).filter(g => !g.monto).length;
+  if (sinMonto) out.push({ act: { d: { sinMonto: true } }, l: 'warn', tag: 'Sin monto', t: `${sinMonto} ${sinMonto === 1 ? 'movimiento está' : 'movimientos están'} sin monto. Complétalos cuando tengas la cifra.` });
   const ord = { bad: 0, warn: 1, info: 2 };
   return out.sort((a, b) => ord[a.l] - ord[b.l]);
 }
@@ -643,6 +645,7 @@ function matchSpec(g, sp, suc, q) {
   if (sp.metodo && !sp.metodo.includes(g.metodo)) return false;
   if (sp.prov !== undefined && (g.prov || '').trim() !== sp.prov) return false;
   if (sp.sinComp && g.comp) return false;
+  if (sp.sinMonto && g.monto > 0) return false;
   if (suc && !(g.suc === suc || g.suc === 'all')) return false;
   if (q && !((g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q))) return false;
   return true;
@@ -655,6 +658,7 @@ function specTitle(sp) {
   if (sp.metodo && !sp.cash) t += sp.tipo === 'ingreso' ? ' cobrados en efectivo y cheques' : ' pagados en efectivo';
   if (sp.prov !== undefined) t = 'Depósitos · ' + (sp.prov || 'Sin cuenta asignada');
   if (sp.sinComp) t = 'Gastos sin comprobante';
+  if (sp.sinMonto) t = 'Movimientos sin monto';
   return sp.title || t;
 }
 function openSheet(sp) {
@@ -695,7 +699,7 @@ function editor(g, fs) {
     <input class="wide" id="d-desc-${id}" value="${esc(g.desc)}" maxlength="120" aria-label="${L.desc}" placeholder="${L.desc}">
     ${tp === 'deposito' ? `<input id="d-prov-${id}" value="${esc(g.prov)}" list="cuentaList" maxlength="80" placeholder="Cuenta" aria-label="Cuenta donde se depositó">` : `<select id="d-cat-${id}" aria-label="Categoría">${cats}</select>`}
     <select id="d-suc-${id}" aria-label="Sucursal">${sucOpts}</select>
-    <input id="d-monto-${id}" class="num" type="number" min="0" step="0.01" inputmode="decimal" value="${g.monto}" aria-label="Monto" style="text-align:right">
+    <input id="d-monto-${id}" class="num" type="number" min="0" step="0.01" inputmode="decimal" value="${g.monto || ''}" placeholder="Sin monto" aria-label="Monto" style="text-align:right">
     <select id="d-met-${id}" aria-label="${L.met}">${mets}</select>
     ${tp === 'deposito' ? '<span></span>' : `<input id="d-prov-${id}" value="${esc(g.prov)}" list="${tp === 'gasto' ? 'supList' : ''}" maxlength="80" placeholder="${L.prov}" aria-label="${L.prov}">`}
     <label class="ck"><input type="checkbox" id="d-comp-${id}"${g.comp ? ' checked' : ''}> Comprobante</label>
@@ -706,8 +710,8 @@ function editor(g, fs) {
 async function saveDrill(id) {
   const g = items(S.mes).find(x => x.id === id); if (!g) return;
   const tp = tipoOf(g), v = k => $(`#d-${k}-${id}`);
-  const monto = Math.round(parseFloat(v('monto').value) * 100) / 100, fecha = v('fecha').value;
-  if (!(monto > 0)) { toast('El monto debe ser mayor que cero.'); return; }
+  const monto = Math.round((parseFloat(v('monto').value) || 0) * 100) / 100, fecha = v('fecha').value;
+  if (monto < 0) { toast('El monto no puede ser negativo.'); return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { toast('Elige una fecha válida.'); return; }
   const ng = { ...g, fecha, monto, desc: v('desc').value.trim(), suc: v('suc').value, metodo: v('met').value, prov: (v('prov')?.value || '').trim(), comp: v('comp').checked,
     cat: tp === 'deposito' ? 'deposito' : v('cat').value, ts: new Date().toISOString() };
@@ -800,7 +804,7 @@ function renderList() {
     ${list.map(g => { const tp = tipoOf(g); return `<tr class="${S.editId === g.id ? 'edit-mark' : ''}"><td class="num" style="white-space:nowrap">${esc((g.fecha || '').slice(8, 10))} ${mLabel(S.mes, true)}</td>
       <td><span class="kind ${tp}">${TIPO_N[tp]}</span><span class="desc">${esc(g.desc || catName(g))}</span><span class="cell-b">${esc(catName(g))}${g.prov ? ' · ' + esc(g.prov) : ''} · ${METODOS[tp][g.metodo] || ''}${g.comp ? '' : ' · <span style="color:var(--warn)">sin comprobante</span>'}${g.cxp ? ' · pago de factura' : ''}</span></td>
       <td>${g.suc === 'all' ? 'Las 3 <span class="cell-b">÷3 c/u ' + money(g.monto / 3, true) + '</span>' : esc(name(g.suc))}</td>
-      <td class="r num"><strong class="amt ${tp}">${tp === 'ingreso' ? '+' : tp === 'gasto' ? '−' : ''}${money(g.monto, true)}</strong>
+      <td class="r num">${g.monto ? `<strong class="amt ${tp}">${tp === 'ingreso' ? '+' : tp === 'gasto' ? '−' : ''}${money(g.monto, true)}</strong>` : '<span class="st warn">Sin monto</span>'}
       <div class="row-actions">${S.confirmDel === g.id
         ? `<button class="lnk danger" data-del-yes="${g.id}">Sí, eliminar</button><button class="lnk" data-del-no>No</button>`
         : `<button class="lnk" data-edit="${g.id}">Editar</button><button class="lnk danger" data-del="${g.id}">Eliminar</button>`}</div></td></tr>`; }).join('')}

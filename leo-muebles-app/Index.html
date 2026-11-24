@@ -363,8 +363,9 @@ const GCATS = [
   { id: 'p_eliza', n: 'Eliza', t: 'personal' },
   { id: 'p_empleados', n: 'Empleados y otros', t: 'personal' },
   { id: 'personales', n: 'Casa y otros personales', t: 'personal' },
+  { id: 'fondos', n: 'Ahorros', t: 'fondo' },
 ];
-const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
+const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal', fondo: 'Fondos' };
 const ICATS = [
   { id: 'contado', n: 'Ventas de contado' },
   { id: 'inicial', n: 'Iniciales de ventas a crédito' },
@@ -415,7 +416,7 @@ const items = m => Object.values(monthDoc(m).items || {}).filter(g => g && g.mon
 const shares = g => g.suc === 'all' ? SUCS.map(s => [s, g.monto / 3]) : SUCS.includes(g.suc) ? [[g.suc, g.monto]] : [];
 const z = () => ({ s1: 0, s2: 0, s3: 0 });
 function calc(m) {
-  const r = { gas: z(), ing: z(), dep: z(), gcat: {}, icat: {}, fijo: 0, variable: 0, personal: 0, tg: 0, ti: 0, td: 0, n: 0, sinComp: 0,
+  const r = { gas: z(), ing: z(), dep: z(), gcat: {}, icat: {}, fijo: 0, variable: 0, personal: 0, fondo: 0, tg: 0, ti: 0, td: 0, n: 0, sinComp: 0,
     caja: { s1: { cob: 0, gas: 0, dep: 0 }, s2: { cob: 0, gas: 0, dep: 0 }, s3: { cob: 0, gas: 0, dep: 0 } } };
   for (const g of items(m)) {
     const tp = tipoOf(g); r.n++;
@@ -617,6 +618,7 @@ function renderResumen() {
   const total = card('Total tienda', null, c.ti, c.tg, p.tg, c.td, pendT, 0,
     `<span class="lbl">Gastos fijos / variables</span><strong class="num">${c.tg ? pct(c.fijo / c.tg) + ' / ' + pct(c.variable / c.tg) : '—'}</strong>
      ${c.personal ? `<span class="lbl">Gastos personales</span><strong class="num">${money(c.personal)}</strong>` : ''}
+     <span class="lbl">Apartado a fondos (ahorros)</span><strong class="num">${c.fondo ? dl({ tipo: 'gasto', grupo: 'fondo' }, money(c.fondo)) : money(0)}</strong>
      <span class="sep"></span><span class="lbl">Deuda con suplidores</span><strong class="num"><a class="cellbtn" href="#suplidores">${money(cxpSum().saldo)}</a></strong>`);
 
   const al = alerts(m);
@@ -760,7 +762,7 @@ function incTable(c) {
     <tr class="foot"><td>${dl({ tipo: 'ingreso' }, 'Total')}</td>${SUCS.map(s => `<td class="r num">${dl({ tipo: 'ingreso', suc: s }, money(c.ing[s]))}</td>`).join('')}<td class="r num">${dl({ tipo: 'ingreso' }, money(c.ti))}</td></tr></tbody></table></div>`;
 }
 function gasTable(c) {
-  const rows = GCATS.filter(k => c.gcat[k.id] || SUCS.some(s => budget(s, k.id)) || (k.t === 'personal' && c.personal));
+  const rows = GCATS.filter(k => c.gcat[k.id] || SUCS.some(s => budget(s, k.id)) || (k.t === 'personal' && c.personal) || k.t === 'fondo');
   if (!rows.length) return `<p class="hint">Sin gastos registrados este mes.</p>`;
   const cell = (k, s) => { const v = c.gcat[k.id]?.[s] || 0, b = budget(s, k.id);
     const bl = b ? `<span class="cell-b ${level(v / b) === 'good' ? '' : level(v / b)}">${pct(v / b)} de ${money(b)}</span>` : '';
@@ -768,7 +770,7 @@ function gasTable(c) {
   const body = t => rows.filter(k => k.t === t).map(k => `<tr class="catrow${isOpen('gasto', k.id) ? ' open' : ''}"><td>${c.gcat[k.id] ? catBtn('gasto', k) : esc(k.n)}</td>${SUCS.map(s => cell(k, s)).join('')}<td class="r num"><strong>${c.gcat[k.id] ? dl({ tipo: 'gasto', cat: k.id }, money(c.gcat[k.id].t)) : money(0)}</strong><span class="cell-b">${c.tg ? pct((c.gcat[k.id]?.t || 0) / c.tg) : ''}</span></td></tr>${drill('gasto', k.id)}`).join('');
   const sub = (t, lbl) => { const tot = s => rows.filter(k => k.t === t).reduce((a, k) => a + (c.gcat[k.id]?.[s] || 0), 0);
     return `<tr class="sub"><td>${dl({ tipo: 'gasto', grupo: t }, lbl)}</td>${SUCS.map(s => `<td class="r num">${tot(s) ? dl({ tipo: 'gasto', grupo: t, suc: s }, money(tot(s))) : money(0)}</td>`).join('')}<td class="r num">${dl({ tipo: 'gasto', grupo: t }, money(c[t]))}</td></tr>`; };
-  return `<div class="scroll"><table>${head()}<tbody>${sub('fijo', 'Fijos')}${body('fijo')}${sub('variable', 'Variables')}${body('variable')}${rows.some(k => k.t === 'personal') ? sub('personal', 'Personal') + body('personal') : ''}
+  return `<div class="scroll"><table>${head()}<tbody>${sub('fijo', 'Fijos')}${body('fijo')}${sub('variable', 'Variables')}${body('variable')}${rows.some(k => k.t === 'personal') ? sub('personal', 'Personal') + body('personal') : ''}${sub('fondo', 'Fondos')}${body('fondo')}
     <tr class="foot"><td>${dl({ tipo: 'gasto' }, 'Total')}</td>${SUCS.map(s => `<td class="r num">${dl({ tipo: 'gasto', suc: s }, money(c.gas[s]))}</td>`).join('')}<td class="r num">${dl({ tipo: 'gasto' }, money(c.tg))}</td></tr></tbody></table></div>`;
 }
 function cajaTable(c) {

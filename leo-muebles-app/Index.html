@@ -13,7 +13,7 @@
   --s1: #3A3C3B; --s2: #D30000; --s3: #FBB100; --s3-stroke: #B98200;
   --inc: #1F7A4D; --exp: #D30000; --dep: #3A3C3B;
   --good: #1F7A4D; --good-bg: #E3F2EA; --warn: #8F5600; --warn-bg: #FFF1D6; --bad: #B3001B; --bad-bg: #FBE3E6;
-  --info-bg: #EEEDE8; --field: #FFFFFF; --hover: #F0EEE9;
+  --info-bg: #EEEDE8; --field: #FFFFFF; --hover: #F0EEE9; --bad-on-ink: #FF9C9C; --good-on-ink: #8FE0B4;
   --font: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
   --r-sm: 8px; --r-md: 14px; --r-pill: 999px;
 }
@@ -23,14 +23,14 @@
   --s1: #E9E7E1; --s2: #E5322F; --s3: #FBB100; --s3-stroke: #FBB100;
   --inc: #5CC98F; --exp: #FF6B66; --dep: #E9E7E1;
   --good: #5CC98F; --good-bg: #173326; --warn: #F2B04A; --warn-bg: #3A2C12; --bad: #FF7A7A; --bad-bg: #3C1C1F;
-  --info-bg: #2F3130; --field: #1F2120; --hover: #2F3130; color-scheme: dark } }
+  --info-bg: #2F3130; --field: #1F2120; --hover: #2F3130; --bad-on-ink: #B3001B; --good-on-ink: #1F7A4D; color-scheme: dark } }
 :root[data-theme="dark"] {
   --ground: #1A1B1B; --card: #262827; --ink: #F6F5F1; --muted: #B9B8B3; --hairline: #3A3C3B;
   --red: #E5322F; --yellow: #FBB100; --on-brand: #FFFFFF;
   --s1: #E9E7E1; --s2: #E5322F; --s3: #FBB100; --s3-stroke: #FBB100;
   --inc: #5CC98F; --exp: #FF6B66; --dep: #E9E7E1;
   --good: #5CC98F; --good-bg: #173326; --warn: #F2B04A; --warn-bg: #3A2C12; --bad: #FF7A7A; --bad-bg: #3C1C1F;
-  --info-bg: #2F3130; --field: #1F2120; --hover: #2F3130; color-scheme: dark }
+  --info-bg: #2F3130; --field: #1F2120; --hover: #2F3130; --bad-on-ink: #B3001B; --good-on-ink: #1F7A4D; color-scheme: dark }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -207,6 +207,20 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
 .alerts li .lnk { margin-left: 8px; }
 .chart [data-mes] { cursor: pointer; }
 .chart rect[data-mes]:hover { opacity: .8; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid var(--hairline); background: var(--card); cursor: pointer; font-weight: 600; color: var(--muted); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 14px 16px; display: grid; gap: 4px; }
+.kpi .lbl { font-size: 13px; }
+.kpi strong { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.kpi.main { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.kpi.main .lbl { color: var(--ground); opacity: .78; }
+.kpi.main .neg { color: var(--bad-on-ink); } .kpi.main .pos { color: var(--good-on-ink); }
+.explain { margin: 0; padding: 12px 14px; border-radius: var(--r-sm); background: var(--info-bg); font-size: 14px; max-width: 80ch; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+td.pos, strong.pos { color: var(--good); }
 .presup input { width: 100%; min-width: 90px; text-align: right; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--field); }
 .empty { text-align: center; padding: 40px 16px; display: grid; gap: 12px; justify-items: center; }
 .empty h2 { font-size: 22px; }
@@ -232,8 +246,11 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
     </div>
     <nav class="tabs" aria-label="Secciones">
       <a href="#resumen" data-tab="resumen">Resumen</a>
+      <a href="#ingresos" data-tab="ingresos">Ingresos</a>
+      <a href="#gastos" data-tab="gastos">Gastos</a>
+      <a href="#fondos" data-tab="fondos">Fondos</a>
+      <a href="#caja" data-tab="caja">Caja y depósitos</a>
       <a href="#movimientos" data-tab="movimientos">Movimientos</a>
-      <a href="#fechas" data-tab="fechas">Por fecha</a>
       <a href="#suplidores" data-tab="suplidores">Suplidores</a>
       <a href="#presupuestos" data-tab="presupuestos">Presupuestos</a>
       <a href="#ajustes" data-tab="ajustes">Ajustes</a>
@@ -327,7 +344,10 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
     <datalist id="cuentaList"></datalist>
   </section>
 
-  <section class="view" id="v-fechas" hidden data-live></section>
+  <section class="view" id="v-ingresos" hidden data-live></section>
+  <section class="view" id="v-gastos" hidden data-live></section>
+  <section class="view" id="v-fondos" hidden data-live></section>
+  <section class="view" id="v-caja" hidden data-live></section>
   <section class="view" id="v-presupuestos" hidden data-live></section>
   <section class="view" id="v-ajustes" hidden data-live></section>
 </main>
@@ -484,9 +504,10 @@ function alerts(m) {
   if (near.length) out.push({ act: { d: { tipo: 'gasto' } }, l: 'warn', tag: 'Cerca', t: near.length <= 3 ? `Arriba del 85 % del presupuesto: ${near.join('; ')}.`
     : `${near.length} partidas van arriba del 85 % de su presupuesto. Revisa la tabla de gastos (cifras en color).` });
   for (const s of SUCS) {
-    const p = pendiente(c, s);
-    if (p < -1) out.push({ act: { d: { cash: true, suc: s } }, l: 'warn', tag: 'Cuadre', t: `En ${name(s)} salieron ${money(-p)} más en efectivo (gastos y depósitos) de lo que se cobró según lo registrado. Falta anotar ingresos en efectivo.` });
-    else if (c.caja[s].cob > 0 && p > c.caja[s].cob * 0.25) out.push({ act: { d: { cash: true, suc: s } }, l: 'info', tag: 'Por depositar', t: `${name(s)} tiene ${money(p)} en efectivo y cheques sin depositar este mes.` });
+    const dd = daily(m, s), ks = Object.keys(dd), t = f => ks.reduce((x, k) => x + dd[k][f], 0);
+    const dif = t('dep') - (t('ef') - t('gasEf') - t('fonEf'));
+    if (dif < -1) out.push({ act: { tab: 'caja', suc: s }, l: 'warn', tag: 'Depósitos', t: `${name(s)}: falta depositar ${money(-dif)} (efectivo que entró − gastos y fondos − lo depositado).` });
+    else if (dif > 1) out.push({ act: { tab: 'caja', suc: s }, l: 'info', tag: 'Depósitos', t: `${name(s)} depositó ${money(dif)} más de lo esperado. Puede ser un depósito que incluyó dinero de otra sucursal.` });
   }
   const prev = [1, 2, 3].map(k => calc(addM(m, -k)));
   for (const s of SUCS) for (const k of GCATS) {
@@ -496,12 +517,6 @@ function alerts(m) {
     if (v > avg * 1.3 && v - avg >= Math.max(1, c.gas[s] * 0.03))
       out.push({ act: { d: { tipo: 'gasto', cat: k.id, suc: s } }, l: 'warn', tag: 'Subió', t: `${name(s)} lleva ${money(v)} en ${k.n}, ${pct(v / avg - 1)} más que su promedio reciente (${money(avg)}).` });
   }
-  const rat = SUCS.filter(s => c.ing[s] > 0).map(s => ({ s, r: c.gas[s] / c.ing[s] })).sort((a, b) => b.r - a.r);
-  if (rat.length >= 2 && rat[0].r - rat[rat.length - 1].r > 0.05) {
-    const hi = rat[0], lo = rat[rat.length - 1];
-    out.push({ act: { d: { tipos: ['ingreso', 'gasto'], suc: hi.s } }, l: 'info', tag: 'Eficiencia', t: `${name(hi.s)} gasta ${money(hi.r * 100, true)} por cada ${cur()}100 que ingresa; ${name(lo.s)} gasta ${money(lo.r * 100, true)}.` });
-  }
-  if (c.sinComp) out.push({ act: { d: { tipo: 'gasto', sinComp: true } }, l: 'info', tag: 'Comprobantes', t: `${c.sinComp} ${c.sinComp === 1 ? 'gasto no tiene' : 'gastos no tienen'} comprobante este mes.` });
   const sinMonto = items(m).filter(g => !g.monto).length;
   if (sinMonto) out.push({ act: { d: { sinMonto: true } }, l: 'warn', tag: 'Sin monto', t: `${sinMonto} ${sinMonto === 1 ? 'movimiento está' : 'movimientos están'} sin monto. Complétalos cuando tengas la cifra.` });
   const ord = { bad: 0, warn: 1, info: 2 };
@@ -546,11 +561,14 @@ function render() {
   pending = false;
   $('#mesLbl').textContent = mLabel(S.mes);
   document.querySelectorAll('nav.tabs a').forEach(x => { if (x.dataset.tab === S.tab) x.setAttribute('aria-current', 'page'); else x.removeAttribute('aria-current'); });
-  for (const t of ['resumen', 'movimientos', 'fechas', 'suplidores', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
+  for (const t of ['resumen', 'ingresos', 'gastos', 'fondos', 'caja', 'movimientos', 'suplidores', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
   renderBanner(); fillSelects();
   if (S.tab === 'resumen') renderResumen();
   if (S.tab === 'movimientos') renderList();
-  if (S.tab === 'fechas') renderFechas();
+  if (S.tab === 'ingresos') renderIngresos();
+  if (S.tab === 'gastos') renderGastos();
+  if (S.tab === 'fondos') renderFondos();
+  if (S.tab === 'caja') renderCaja();
   if (S.tab === 'suplidores') renderCxp();
   if (S.tab === 'presupuestos') renderPresup();
   if (S.tab === 'ajustes') renderAjustes();
@@ -614,48 +632,29 @@ function renderResumen() {
   const prevLbl = mLabel(addM(m, -1), true);
   const delta = (a, b) => b > 0 ? `<span class="delta ${a > b ? 'up' : 'down'}">${a > b ? '▲' : '▼'} ${pct(Math.abs(a / b - 1))} vs ${prevLbl}</span>` : '';
   const card = (title, dot, ing, gas, gasPrev, dep, pend, bt, extra) => {
-    const res = ing - gas, used = bt ? gas / bt : 0, sc = dot ? { suc: dot } : {}, fon = dot ? c.fon[dot] : c.tf;
+    const res = ing - gas, sc = dot ? { suc: dot } : {}, fon = dot ? c.fon[dot] : c.tf;
     return `<div class="card ${dot ? '' : 'total'}"><div class="card-name">${dot ? `<i class="dot ${dot}" style="background:var(--${dot})"></i>` : ''}${esc(title)}</div>
       <div><span class="lbl" style="font-size:12px">Resultado (ingresos − gastos)</span><div class="big num ${res < 0 ? 'neg' : ''}">${dl({ tipos: ['ingreso', 'gasto'], ...sc }, money(res), 'big-btn')}</div></div>
-      <div class="kv"><span class="lbl">Ingresos</span><strong class="num">${dl({ tipo: 'ingreso', ...sc }, money(ing))}</strong>
-        <span class="lbl">Gastos ${delta(gas, gasPrev)}</span><strong class="num">${dl({ tipo: 'gasto', ...sc }, money(gas))}</strong>
-        <span class="lbl">Gasto por cada ${cur()}100 que entra</span><strong class="num">${ing ? money(gas / ing * 100, true) : '—'}</strong>
-        <span class="sep"></span>
-        <span class="lbl">Apartado a fondos</span><strong class="num">${fon ? dl({ tipo: 'fondo', ...sc }, money(fon)) : money(0)}</strong>
-        <span class="lbl">Depositado al banco</span><strong class="num">${dl({ tipo: 'deposito', ...sc }, money(dep))}</strong>
-        <span class="lbl">Efectivo y cheques por depositar</span><strong class="num ${pend < -1 ? 'neg' : ''}">${dl({ cash: true, ...sc }, money(pend))}</strong>
-        ${extra || ''}</div>
-      ${bt ? `<div class="meter" title="Presupuesto de gastos usado: ${pct(used)}"><i class="${level(used)}" style="width:${Math.min(100, used * 100)}%"></i></div>` : ''}</div>`;
+      <div class="kv"><span class="lbl">Ingresos</span><strong class="num">${ing ? dl({ tipo: 'ingreso', ...sc }, money(ing)) : money(0)}</strong>
+        <span class="lbl">Gastos</span><strong class="num">${gas ? dl({ tipo: 'gasto', ...sc }, money(gas)) : money(0)}</strong>
+        <span class="lbl">Fondos apartados</span><strong class="num">${fon ? dl({ tipo: 'fondo', ...sc }, money(fon)) : money(0)}</strong>
+        ${dot ? '' : extra || ''}</div></div>`;
   };
   const cards = SUCS.map(s => { const bt = budgetTotal(s);
     return card(name(s), s, c.ing[s], c.gas[s], p.gas[s], c.dep[s], pendiente(c, s), bt,
       `<span class="lbl">Presupuesto usado</span><strong class="num">${bt ? pct(c.gas[s] / bt) : '<a href="#presupuestos" class="hint">Definir</a>'}</strong>`); }).join('');
   const pendT = SUCS.reduce((a, s) => a + pendiente(c, s), 0);
   const total = card('Total tienda', null, c.ti, c.tg, p.tg, c.td, pendT, 0,
-    `<span class="lbl">Gastos fijos / variables</span><strong class="num">${c.tg ? pct(c.fijo / c.tg) + ' / ' + pct(c.variable / c.tg) : '—'}</strong>
-     ${c.personal ? `<span class="lbl">Gastos personales</span><strong class="num">${money(c.personal)}</strong>` : ''}
-     <span class="sep"></span><span class="lbl">Deuda con suplidores</span><strong class="num"><a class="cellbtn" href="#suplidores">${money(cxpSum().saldo)}</a></strong>`);
+    `<span class="sep"></span><span class="lbl">Deuda con suplidores</span><strong class="num"><a class="cellbtn" href="#suplidores">${money(cxpSum().saldo)}</a></strong>`);
 
   const al = alerts(m);
   S.alertActs = al.map(a => a.act || null);
-  const alertsHtml = al.length ? `<ul class="alerts">${al.map((a, i) => `<li class="${a.l}"><span class="pill">${a.tag}</span><span>${esc(a.t)}${a.act ? `<button class="lnk" data-act="${i}">${a.act.go ? 'Ver facturas' : 'Ver y editar'}</button>` : ''}</span></li>`).join('')}</ul>`
+  const alertsHtml = al.length ? `<ul class="alerts">${al.map((a, i) => `<li class="${a.l}"><span class="pill">${a.tag}</span><span>${esc(a.t)}${a.act ? `<button class="lnk" data-act="${i}">${a.act.go ? 'Ver facturas' : a.act.tab ? 'Ver cuadre' : 'Ver y editar'}</button>` : ''}</span></li>`).join('')}</ul>`
     : `<p class="hint">Nada fuera de lo normal este mes.</p>`;
 
-  v.innerHTML = `<p class="hint" style="margin:0">Toca cualquier número o categoría subrayada para ver sus movimientos y editarlos.</p><div class="cards">${cards}${total}</div>
-    <div class="grid2">
-      <div class="stack">
-        <div class="panel"><div class="panel-head"><h2>Ingresos por forma de cobro</h2></div>${metTable(c)}</div>
-        <div class="panel"><div class="panel-head"><h2>Ingresos por categoría</h2></div>${incTable(c)}</div>
-        <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">Lo compartido se divide entre las 3</span></div>${gasTable(c)}</div>
-        <div class="panel"><div class="panel-head"><h2>Fondos (ahorros)</h2><span class="hint">No se cuentan como gasto</span></div>${fonTable(c)}</div>
-      </div>
-      <div class="stack">
-        <div class="panel"><div class="panel-head"><h2>Avisos</h2><span class="hint">${mLabel(m)}</span></div>${alertsHtml}</div>
-        <div class="panel"><div class="panel-head"><h2>Cuadre de efectivo</h2><span class="hint">Solo movimientos de este mes</span></div>${cajaTable(c)}</div>
-        <div class="panel"><div class="panel-head"><h2>Depósitos por cuenta</h2><a class="hint" href="#ajustes">Administrar cuentas</a></div>${depTable(m)}</div>
-        <div class="panel chart"><div class="panel-head"><h2>Últimos 6 meses</h2><span class="hint">Toca un mes para verlo</span></div>${trendChart(m)}</div>
-      </div>
-    </div>`;
+  v.innerHTML = `<div class="cards">${cards}${total}</div>
+    <div class="panel"><div class="panel-head"><h2>Avisos</h2><span class="hint">${mLabel(m)}</span></div>${alertsHtml}</div>
+    <p class="hint" style="margin:0">El detalle está en las pestañas <a href="#ingresos">Ingresos</a>, <a href="#gastos">Gastos</a>, <a href="#fondos">Fondos</a> y <a href="#caja">Caja y depósitos</a>. Toca cualquier cifra subrayada para ver y editar sus movimientos.</p>`;
 }
 
 const head = () => `<thead><tr><th>Categoría</th>${SUCS.map(s => `<th class="r">${esc(name(s))}</th>`).join('')}<th class="r">Total</th></tr></thead>`;
@@ -1010,6 +1009,111 @@ function renderFechas() {
     <tr class="foot"><td>Total del mes</td><td class="r num">${items(S.mes).length}</td>${SUCS.map(s => `<td class="r num">${money(c.gas[s])}</td>`).join('')}<td class="r num">${money(c.tg)}</td><td class="r num">${money(c.ti)}</td><td class="r num">${money(c.td)}</td><td class="r num">${money(c.tf)}</td></tr></tbody></table></div>` : `<p class="hint">No hay movimientos en ${mLabel(S.mes)}.</p>`}</div>`;
 }
 
+/* ---------- pestañas de detalle ---------- */
+const shareOf = (g, suc) => !suc ? g.monto : g.suc === suc ? g.monto : g.suc === 'all' ? g.monto / 3 : 0;
+function daily(m, suc) {
+  const d = {};
+  for (const g of items(m)) {
+    const a = shareOf(g, suc); if (!a) continue;
+    const r = (d[g.fecha] ||= { ef: 0, tr: 0, tj: 0, ch: 0, ing: 0, gas: 0, gasEf: 0, fon: 0, fonEf: 0, dep: 0 }), tp = tipoOf(g);
+    if (tp === 'ingreso') { r.ing += a; r[{ efectivo: 'ef', transferencia: 'tr', tarjeta: 'tj', cheque: 'ch' }[g.metodo] || 'ef'] += a; }
+    else if (tp === 'gasto') { r.gas += a; if (g.metodo === 'efectivo') r.gasEf += a; }
+    else if (tp === 'fondo') { r.fon += a; if (g.metodo === 'efectivo') r.fonEf += a; }
+    else r.dep += a;
+  }
+  return d;
+}
+const vsc = () => S.vsuc ? { suc: S.vsuc } : {};
+const sucChips = allLabel => `<div class="chips" role="group" aria-label="Sucursal">${[['', allLabel || 'Todas las sucursales'], ...SUCS.map(x => [x, name(x)])].map(([k, n]) => `<button class="chip${(S.vsuc || '') === k ? ' on' : ''}" data-vsuc="${k}" aria-pressed="${(S.vsuc || '') === k}">${esc(n)}</button>`).join('')}</div>`;
+const dayName = d => { const dt = new Date(d + 'T12:00:00'), w = dt.toLocaleDateString('es', { weekday: 'short' }).replace('.', ''); return `${w[0].toUpperCase() + w.slice(1)} ${dt.getDate()}`; };
+const cellM = (sp, v) => v ? dl(sp, money(v)) : '<span class="hint">—</span>';
+const kpi = (lbl, v, sp, main, cls) => `<div class="kpi${main ? ' main' : ''}"><span class="lbl">${lbl}</span><strong class="${cls || ''}">${v && sp ? dl(sp, money(v)) : money(v)}</strong></div>`;
+const sumDays = (d, days, f) => days.reduce((a, k) => a + d[k][f], 0);
+const whereTxt = () => `${mLabel(S.mes)}${S.vsuc ? ' · ' + esc(name(S.vsuc)) : ''}`;
+
+function renderIngresos() {
+  const v = $('#v-ingresos'), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].ing).sort(), sc = vsc();
+  const T = f => sumDays(d, days, f), hasCh = T('ch') > 0;
+  const cols = [['ef', 'Efectivo', 'efectivo'], ['tr', 'Transferencia', 'transferencia'], ['tj', 'Tarjeta', 'tarjeta'], ...(hasCh ? [['ch', 'Cheque', 'cheque']] : [])];
+  v.innerHTML = `${sucChips()}
+    <div class="kpis">${kpi('Total de ingresos', T('ing'), { tipo: 'ingreso', ...sc }, true)}${cols.map(([f, n, m]) => kpi(n, T(f), { tipo: 'ingreso', metodo: [m], ...sc })).join('')}</div>
+    <div class="panel"><div class="panel-head"><h2>Ingresos por día</h2><span class="hint">${whereTxt()}</span></div>
+    ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th>${cols.map(([, n]) => `<th class="r">${n}</th>`).join('')}<th class="r">Total del día</th></tr></thead><tbody>
+      ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'ingreso', ...sc }, dayName(k))}</td>${cols.map(([f, , m]) => `<td class="r num">${cellM({ dia: k, tipo: 'ingreso', metodo: [m], ...sc }, d[k][f])}</td>`).join('')}<td class="r num"><strong>${cellM({ dia: k, tipo: 'ingreso', ...sc }, d[k].ing)}</strong></td></tr>`).join('')}
+      <tr class="foot"><td>Total</td>${cols.map(([f]) => `<td class="r num">${money(T(f))}</td>`).join('')}<td class="r num">${money(T('ing'))}</td></tr></tbody></table></div>` : `<p class="hint">No hay ingresos registrados en ${whereTxt()}.</p>`}</div>`;
+}
+
+function renderGastos() {
+  const v = $('#v-gastos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].gas).sort(), sc = vsc();
+  const amt = id => { const row = c.gcat[id]; return row ? (S.vsuc ? row[S.vsuc] : row.t) : 0; };
+  const grp = t => GCATS.filter(k => k.t === t).reduce((a, k) => a + amt(k.id), 0);
+  const total = sumDays(d, days, 'gas');
+  const groupRows = (t, lbl) => { const ks = GCATS.filter(k => k.t === t && amt(k.id)); if (!ks.length) return '';
+    return `<tr class="sub"><td>${dl({ tipo: 'gasto', grupo: t, ...sc }, lbl)}</td><td class="r num">${dl({ tipo: 'gasto', grupo: t, ...sc }, money(grp(t)))}</td><td class="r num">${total ? pct(grp(t) / total) : ''}</td></tr>`
+      + ks.sort((a, b) => amt(b.id) - amt(a.id)).map(k => `<tr><td>${dl({ tipo: 'gasto', cat: k.id, ...sc }, esc(k.n))}</td><td class="r num">${dl({ tipo: 'gasto', cat: k.id, ...sc }, money(amt(k.id)))}</td><td class="r num hint">${total ? pct(amt(k.id) / total) : ''}</td></tr>`).join(''); };
+  v.innerHTML = `${sucChips()}
+    <div class="kpis">${kpi('Total de gastos', total, { tipo: 'gasto', ...sc }, true)}${kpi('Fijos', grp('fijo'), { tipo: 'gasto', grupo: 'fijo', ...sc })}${kpi('Variables', grp('variable'), { tipo: 'gasto', grupo: 'variable', ...sc })}${kpi('Personal', grp('personal'), { tipo: 'gasto', grupo: 'personal', ...sc })}</div>
+    <div class="two">
+      <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">${whereTxt()}</span></div>
+      ${total ? `<div class="scroll"><table><thead><tr><th>Categoría</th><th class="r">Monto</th><th class="r">%</th></tr></thead><tbody>${groupRows('fijo', 'Fijos')}${groupRows('variable', 'Variables')}${groupRows('personal', 'Personal')}
+        <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td><td></td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>
+      <div class="panel"><div class="panel-head"><h2>Gastos por día</h2><span class="hint">${whereTxt()}</span></div>
+      ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Gastos del día</th></tr></thead><tbody>
+        ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'gasto', ...sc }, dayName(k))}</td><td class="r num">${dl({ dia: k, tipo: 'gasto', ...sc }, money(d[k].gas))}</td></tr>`).join('')}
+        <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>
+    </div>`;
+}
+
+function renderFondos() {
+  const v = $('#v-fondos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].fon).sort(), sc = vsc();
+  const amt = id => { const row = c.fcat[id]; return row ? (S.vsuc ? row[S.vsuc] : row.t) : 0; };
+  const total = sumDays(d, days, 'fon'), ks = FCATS.filter(k => amt(k.id));
+  v.innerHTML = `${sucChips()}
+    <div class="kpis">${kpi('Total apartado a fondos', total, { tipo: 'fondo', ...sc }, true)}${ks.map(k => kpi(esc(k.n), amt(k.id), { tipo: 'fondo', cat: k.id, ...sc })).join('')}</div>
+    <p class="explain">Los fondos son dinero que apartas (ahorros). <strong>No cuentan como gasto</strong>, pero sí salen de la caja, por eso se restan en Caja y depósitos.</p>
+    <div class="panel"><div class="panel-head"><h2>Fondos por día</h2><span class="hint">${whereTxt()}</span></div>
+    ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Apartado ese día</th></tr></thead><tbody>
+      ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'fondo', ...sc }, dayName(k))}</td><td class="r num">${dl({ dia: k, tipo: 'fondo', ...sc }, money(d[k].fon))}</td></tr>`).join('')}
+      <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay fondos registrados en ${whereTxt()}. Regístralos en Movimientos → Fondo.</p>`}</div>`;
+}
+
+function renderCaja() {
+  const v = $('#v-caja'), d = daily(S.mes, S.vsuc), sc = vsc();
+  const days = Object.keys(d).filter(k => d[k].ef || d[k].gasEf || d[k].fonEf || d[k].dep).sort();
+  let acc = 0;
+  const rows = days.map(k => { const x = d[k], esp = x.ef - x.gasEf - x.fonEf, dif = x.dep - esp; acc += dif; return { k, x, esp, dif, acc }; });
+  const T = f => sumDays(d, days, f), esp = T('ef') - T('gasEf') - T('fonEf'), dif = T('dep') - esp;
+  const signCls = n => n < -1 ? 'neg' : n > 1 ? 'pos' : '';
+  const sgn = n => (n > 0 ? '+' : '') + money(n);
+  const porSuc = SUCS.map(x => { const dd = daily(S.mes, x), ks = Object.keys(dd); const t = f => ks.reduce((a, k) => a + dd[k][f], 0);
+    const ef = t('ef'), sal = t('gasEf') + t('fonEf'), dep = t('dep'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
+  const tot = porSuc.reduce((a, o) => { for (const f of ['ef', 'sal', 'net', 'dep', 'dif']) a[f] += o[f]; return a; }, { ef: 0, sal: 0, net: 0, dep: 0, dif: 0 });
+  const difTxt = n => Math.abs(n) < 1 ? '<span class="hint">Cuadra</span>' : n < 0 ? `<span class="neg">Falta ${money(-n)}</span>` : `<span class="pos">De más ${money(n)}</span>`;
+  const compRow = (o, lbl, x) => `<tr><td>${lbl}</td><td class="r num">${cellM({ tipo: 'ingreso', metodo: ['efectivo'], ...(x ? { suc: x } : {}) }, o.ef)}</td><td class="r num">${cellM({ cash: true, tipos: ['gasto', 'fondo'], ...(x ? { suc: x } : {}) }, o.sal)}</td><td class="r num"><strong>${money(o.net)}</strong></td><td class="r num">${cellM({ tipo: 'deposito', ...(x ? { suc: x } : {}) }, o.dep)}</td><td class="r num">${difTxt(o.dif)}</td></tr>`;
+  const comp = `<div class="panel"><div class="panel-head"><h2>Efectivo vs. depósitos por sucursal</h2><span class="hint">${mLabel(S.mes)}</span></div>
+    <div class="scroll"><table><thead><tr><th>Sucursal</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
+    ${porSuc.map(o => compRow(o, `<button class="catbtn" data-vsuc="${o.x}" title="Ver el detalle por día">${esc(name(o.x))}</button>`, o.x)).join('')}
+    <tr class="foot"><td>Las 3 juntas</td><td class="r num">${money(tot.ef)}</td><td class="r num">${money(tot.sal)}</td><td class="r num">${money(tot.net)}</td><td class="r num">${money(tot.dep)}</td><td class="r num">${difTxt(tot.dif)}</td></tr></tbody></table></div></div>`;
+  v.innerHTML = `${comp}
+    <p class="explain"><strong>Cómo se calcula:</strong> efectivo que entró − gastos y fondos pagados en efectivo = <strong>lo que debió depositarse</strong> (columna "Efectivo − gastos"). Luego se compara con lo depositado. Toca una sucursal para ver su detalle día por día.</p>
+    <h2 style="font-size:18px;margin:4px 0 0">Detalle por día</h2>
+    ${sucChips('Las 3 juntas')}
+    <div class="kpis">${kpi('Efectivo que entró', T('ef'), { tipo: 'ingreso', metodo: ['efectivo'], ...sc })}${kpi('Gastos y fondos', T('gasEf') + T('fonEf'), { cash: true, tipos: ['gasto', 'fondo'], ...sc })}${kpi('Efectivo − gastos', esp)}${kpi('Depositado', T('dep'), { tipo: 'deposito', ...sc })}${kpi(dif < -1 ? 'Falta por depositar' : 'Diferencia', dif < -1 ? -dif : dif, null, true, signCls(dif))}</div>
+    <div class="panel"><div class="panel-head"><h2>Cuadre diario${S.vsuc ? ' · ' + esc(name(S.vsuc)) : ' · las 3 juntas'}</h2><span class="hint">${whereTxt()}</span></div>
+    ${rows.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th><th class="r">Acumulado</th></tr></thead><tbody>
+      ${rows.map(({ k, x, esp, dif, acc }) => `<tr><td>${dl({ dia: k, ...sc }, dayName(k))}</td>
+        <td class="r num">${cellM({ dia: k, tipo: 'ingreso', metodo: ['efectivo'], ...sc }, x.ef)}</td>
+        <td class="r num">${cellM({ dia: k, cash: true, tipos: ['gasto', 'fondo'], ...sc }, x.gasEf + x.fonEf)}</td>
+        <td class="r num"><strong>${money(esp)}</strong></td>
+        <td class="r num">${cellM({ dia: k, tipo: 'deposito', ...sc }, x.dep)}</td>
+        <td class="r num ${signCls(dif)}">${Math.abs(dif) < 1 ? '0' : sgn(dif)}</td>
+        <td class="r num ${signCls(acc)}"><strong>${Math.abs(acc) < 1 ? '0' : sgn(acc)}</strong></td></tr>`).join('')}
+      <tr class="foot"><td>Total</td><td class="r num">${money(T('ef'))}</td><td class="r num">${money(T('gasEf') + T('fonEf'))}</td><td class="r num">${money(esp)}</td><td class="r num">${money(T('dep'))}</td><td class="r num ${signCls(dif)}">${sgn(dif)}</td><td></td></tr></tbody></table></div>
+      <p class="hint" style="margin:8px 0 0"><span class="neg">Negativo = falta depositar</span> · <span class="pos">positivo = se depositó de más</span></p>`
+      : `<p class="hint">No hay movimientos de efectivo en ${whereTxt()}.</p>`}</div>
+    <div class="panel"><div class="panel-head"><h2>Depósitos por cuenta</h2><a class="hint" href="#ajustes">Administrar cuentas</a></div>${depTable(S.mes)}</div>`;
+}
+
 function renderPresup() {
   const v = $('#v-presupuestos'), c = calc(S.mes);
   v.innerHTML = `<div class="panel presup"><div class="panel-head"><h2>Presupuesto mensual de gastos por sucursal</h2>
@@ -1159,8 +1263,10 @@ document.addEventListener('click', async e => {
   }
   if (t.id === 'csvBtn') { exportCsv(); return; }
   if (t.dataset.mesGo) { setMes(t.dataset.mesGo); return; }
+  if (t.dataset.vsuc !== undefined) { S.vsuc = t.dataset.vsuc; render(); return; }
   if (t.dataset.drill) { try { openSheet(JSON.parse(t.dataset.drill)); } catch (_) {} return; }
   if (t.dataset.act !== undefined) { const a = S.alertActs[+t.dataset.act]; if (!a) return;
+    if (a.tab) { S.vsuc = a.suc || ''; location.hash = '#' + a.tab; return; }
     if (a.go) { location.hash = '#suplidores'; setTimeout(() => { $('#cf-est').value = a.go; renderCList(); }, 0); } else openSheet(a.d); return; }
   if (t.dataset.dsave) { await saveDrill(t.dataset.dsave); return; }
   if (t.dataset.ddel) { S.dConfirm = t.dataset.ddel; renderSheet(true); return; }
@@ -1202,8 +1308,8 @@ async function exportCsv() {
 function setMes(m) { S.mes = m; S.confirmDel = null; S.openCat = null; if (S.sheet) { S.sheet = null; S.dirty = {}; $('#sheet').hidden = true; $('#sheetBack').hidden = true; document.body.style.overflow = ''; } $('#f-desde').value = ''; $('#f-hasta').value = ''; if (!S.editId) resetForm(); if (S.mode === 'live') subscribe(); render(); }
 $('#prevM').addEventListener('click', () => setMes(addM(S.mes, -1)));
 $('#nextM').addEventListener('click', () => setMes(addM(S.mes, 1)));
-function route() { let h = location.hash.slice(1); if (h === 'gastos') h = 'movimientos'; if (h === 'porpagar') h = 'suplidores';
-  S.tab = ['resumen', 'movimientos', 'fechas', 'suplidores', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
+function route() { let h = location.hash.slice(1); if (h === 'porpagar') h = 'suplidores'; if (h === 'fechas') h = 'resumen';
+  S.tab = ['resumen', 'ingresos', 'gastos', 'fondos', 'caja', 'movimientos', 'suplidores', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
 window.addEventListener('hashchange', route);
 
 function subscribe() {

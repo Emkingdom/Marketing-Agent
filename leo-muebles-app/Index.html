@@ -197,6 +197,8 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
 .ditem { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 130px !important; }
 .ditem .wide { grid-column: 2 / -1 !important; }
 .ditem .c2 { grid-column: auto !important; }
+.ditem .full-row { grid-column: 1 / -1 !important; }
+.cell-b.nota { white-space: normal; font-style: italic; color: var(--ink); opacity: .8; }
 .ditem.dirty { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
 .ditem .ck { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .ditem .ck input { width: auto; }
@@ -231,6 +233,7 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
     <nav class="tabs" aria-label="Secciones">
       <a href="#resumen" data-tab="resumen">Resumen</a>
       <a href="#movimientos" data-tab="movimientos">Movimientos</a>
+      <a href="#fechas" data-tab="fechas">Por fecha</a>
       <a href="#suplidores" data-tab="suplidores">Suplidores</a>
       <a href="#presupuestos" data-tab="presupuestos">Presupuestos</a>
       <a href="#ajustes" data-tab="ajustes">Ajustes</a>
@@ -260,6 +263,7 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
           <label class="f full"><span id="l-desc">Descripción</span><input type="text" id="g-desc" maxlength="120"></label>
           <label class="f"><span id="l-prov">Proveedor</span><input type="text" id="g-prov" maxlength="80" placeholder="Opcional"></label>
           <label class="f"><span id="l-met">Forma de pago</span><select id="g-met"></select></label>
+          <label class="f full">Comentario<input type="text" id="g-nota" maxlength="200" placeholder="Opcional: cualquier nota sobre este movimiento"></label>
           <label class="check full"><input type="checkbox" id="g-comp"> <span id="l-comp">Tengo comprobante o factura</span></label>
           <p class="err full" id="g-err" role="alert"></p>
           <div class="btns full">
@@ -322,13 +326,14 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
     <datalist id="cuentaList"></datalist>
   </section>
 
+  <section class="view" id="v-fechas" hidden data-live></section>
   <section class="view" id="v-presupuestos" hidden data-live></section>
   <section class="view" id="v-ajustes" hidden data-live></section>
 </main>
 <div class="sheet-back" id="sheetBack" hidden></div>
 <aside class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle" data-live>
   <div class="sheet-head"><div><h2 id="sheetTitle">Movimientos</h2><p class="hint" id="sheetSub"></p></div><button class="icon-btn" id="sheetClose" type="button" aria-label="Cerrar">✕</button></div>
-  <div class="sheet-filters"><select id="sh-suc" aria-label="Sucursal"></select><input id="sh-q" type="search" placeholder="Buscar descripción, proveedor o cuenta" aria-label="Buscar"></div>
+  <div class="sheet-filters"><select id="sh-suc" aria-label="Sucursal"></select><input id="sh-q" type="search" placeholder="Buscar descripción, proveedor, cuenta o comentario" aria-label="Buscar"></div>
   <div class="sheet-body" id="sheetBody"></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -352,7 +357,11 @@ const GCATS = [
   { id: 'bancarios', n: 'Comisiones bancarias y de tarjeta', t: 'variable' },
   { id: 'personas', n: 'Pagos a personas (por aclarar)', t: 'variable' },
   { id: 'otros', n: 'Otros gastos', t: 'variable' },
-  { id: 'personales', n: 'Personal', t: 'personal' },
+  { id: 'p_emma', n: 'Emmanuel (Emma)', t: 'personal' },
+  { id: 'p_fermin', n: 'Fermín', t: 'personal' },
+  { id: 'p_maria', n: 'María', t: 'personal' },
+  { id: 'p_eliza', n: 'Eliza', t: 'personal' },
+  { id: 'personales', n: 'Casa y otros personales', t: 'personal' },
 ];
 const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
 const ICATS = [
@@ -520,10 +529,11 @@ function render() {
   pending = false;
   $('#mesLbl').textContent = mLabel(S.mes);
   document.querySelectorAll('nav.tabs a').forEach(x => { if (x.dataset.tab === S.tab) x.setAttribute('aria-current', 'page'); else x.removeAttribute('aria-current'); });
-  for (const t of ['resumen', 'movimientos', 'suplidores', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
+  for (const t of ['resumen', 'movimientos', 'fechas', 'suplidores', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
   renderBanner(); fillSelects();
   if (S.tab === 'resumen') renderResumen();
   if (S.tab === 'movimientos') renderList();
+  if (S.tab === 'fechas') renderFechas();
   if (S.tab === 'suplidores') renderCxp();
   if (S.tab === 'presupuestos') renderPresup();
   if (S.tab === 'ajustes') renderAjustes();
@@ -647,7 +657,8 @@ function matchSpec(g, sp, suc, q) {
   if (sp.sinComp && g.comp) return false;
   if (sp.sinMonto && g.monto > 0) return false;
   if (suc && !(g.suc === suc || g.suc === 'all')) return false;
-  if (q && !((g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q))) return false;
+  if (q && !((g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q) || (g.nota || '').toLowerCase().includes(q))) return false;
+  if (sp.dia && g.fecha !== sp.dia) return false;
   return true;
 }
 function specTitle(sp) {
@@ -659,6 +670,7 @@ function specTitle(sp) {
   if (sp.prov !== undefined) t = 'Depósitos · ' + (sp.prov || 'Sin cuenta asignada');
   if (sp.sinComp) t = 'Gastos sin comprobante';
   if (sp.sinMonto) t = 'Movimientos sin monto';
+  if (sp.dia) t = (sp.tipo ? T[sp.tipo] : 'Movimientos') + ' del ' + fmtDate(sp.dia);
   return sp.title || t;
 }
 function openSheet(sp) {
@@ -703,6 +715,7 @@ function editor(g, fs) {
     <select id="d-met-${id}" aria-label="${L.met}">${mets}</select>
     ${tp === 'deposito' ? '<span></span>' : `<input id="d-prov-${id}" value="${esc(g.prov)}" list="${tp === 'gasto' ? 'supList' : ''}" maxlength="80" placeholder="${L.prov}" aria-label="${L.prov}">`}
     <label class="ck"><input type="checkbox" id="d-comp-${id}"${g.comp ? ' checked' : ''}> Comprobante</label>
+    <input class="full-row" id="d-nota-${id}" value="${esc(g.nota)}" maxlength="200" placeholder="Comentario" aria-label="Comentario">
     <div class="acts"><span class="hint"><span class="kind ${tp}">${TIPO_N[tp]}</span>${g.suc === 'all' && fs ? 'A esta sucursal le toca ' + money(g.monto / 3, true) : ''}${g.cxp ? ' Pago de factura de suplidor' : ''}</span>
       ${S.dConfirm === id ? `<button class="lnk danger" data-ddel-yes="${id}">Sí, eliminar</button><button class="lnk" data-ddel-no>No</button>`
         : `<button class="lnk danger" data-ddel="${id}">Eliminar</button><button class="btn small primary" data-dsave="${id}">Guardar</button>`}</div></div>`;
@@ -713,7 +726,7 @@ async function saveDrill(id) {
   const monto = Math.round((parseFloat(v('monto').value) || 0) * 100) / 100, fecha = v('fecha').value;
   if (monto < 0) { toast('El monto no puede ser negativo.'); return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { toast('Elige una fecha válida.'); return; }
-  const ng = { ...g, fecha, monto, desc: v('desc').value.trim(), suc: v('suc').value, metodo: v('met').value, prov: (v('prov')?.value || '').trim(), comp: v('comp').checked,
+  const ng = { ...g, fecha, monto, desc: v('desc').value.trim(), suc: v('suc').value, metodo: v('met').value, prov: (v('prov')?.value || '').trim(), comp: v('comp').checked, nota: v('nota').value.trim(),
     cat: tp === 'deposito' ? 'deposito' : v('cat').value, ts: new Date().toISOString() };
   const m2 = fecha.slice(0, 7);
   try {
@@ -789,7 +802,7 @@ function filtered() {
   const d1 = $('#f-desde').value, d2 = $('#f-hasta').value;
   return items(S.mes).filter(g => (ft === 'todos' || tipoOf(g) === ft) && (fs === 'todas' || g.suc === fs) && (fc === 'todas' || g.cat === fc) &&
     (!d1 || (g.fecha || '') >= d1) && (!d2 || (g.fecha || '') <= d2) &&
-    (!q || (g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q)))
+    (!q || (g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q) || (g.nota || '').toLowerCase().includes(q)))
     .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.ts || '').localeCompare(a.ts || ''));
 }
 function renderList() {
@@ -802,7 +815,7 @@ function renderList() {
   el.innerHTML = `<div class="totals num"><span>${list.length} movimientos</span><span>Ingresos <b class="amt ingreso">${money(si, true)}</b></span><span>Gastos <b class="amt gasto">${money(sg, true)}</b></span><span>Depósitos <b>${money(sd, true)}</b></span><span>Resultado <b class="${si - sg < 0 ? 'neg' : ''}">${money(si - sg, true)}</b></span></div>
   <div class="scroll"><table><thead><tr><th>Fecha</th><th>Movimiento</th><th>Sucursal</th><th class="r">Monto</th></tr></thead><tbody>
     ${list.map(g => { const tp = tipoOf(g); return `<tr class="${S.editId === g.id ? 'edit-mark' : ''}"><td class="num" style="white-space:nowrap">${esc((g.fecha || '').slice(8, 10))} ${mLabel(S.mes, true)}</td>
-      <td><span class="kind ${tp}">${TIPO_N[tp]}</span><span class="desc">${esc(g.desc || catName(g))}</span><span class="cell-b">${esc(catName(g))}${g.prov ? ' · ' + esc(g.prov) : ''} · ${METODOS[tp][g.metodo] || ''}${g.comp ? '' : ' · <span style="color:var(--warn)">sin comprobante</span>'}${g.cxp ? ' · pago de factura' : ''}</span></td>
+      <td><span class="kind ${tp}">${TIPO_N[tp]}</span><span class="desc">${esc(g.desc || catName(g))}</span><span class="cell-b">${esc(catName(g))}${g.prov ? ' · ' + esc(g.prov) : ''} · ${METODOS[tp][g.metodo] || ''}${g.comp ? '' : ' · <span style="color:var(--warn)">sin comprobante</span>'}${g.cxp ? ' · pago de factura' : ''}</span>${g.nota ? `<span class="cell-b nota">“${esc(g.nota)}”</span>` : ''}</td>
       <td>${g.suc === 'all' ? 'Las 3 <span class="cell-b">÷3 c/u ' + money(g.monto / 3, true) + '</span>' : esc(name(g.suc))}</td>
       <td class="r num">${g.monto ? `<strong class="amt ${tp}">${tp === 'ingreso' ? '+' : tp === 'gasto' ? '−' : ''}${money(g.monto, true)}</strong>` : '<span class="st warn">Sin monto</span>'}
       <div class="row-actions">${S.confirmDel === g.id
@@ -931,6 +944,28 @@ async function savePay(fid) {
   } catch (x) { err.textContent = errMsg(x); }
 }
 
+function renderFechas() {
+  const v = $('#v-fechas');
+  if (S.mode === 'loading') { v.innerHTML = '<div class="panel empty"><p>Cargando…</p></div>'; return; }
+  const meses = Object.keys(S.months).filter(m => items(m).length).sort().reverse();
+  const mrow = m => { const c = calc(m), res = c.ti - c.tg;
+    return `<tr${m === S.mes ? ' class="sub"' : ''}><td><button class="catbtn" data-mes-go="${m}" title="Ver este mes por día">${mLabel(m)}</button></td><td class="r num">${items(m).length}</td>${SUCS.map(s => `<td class="r num">${money(c.gas[s])}</td>`).join('')}<td class="r num"><strong>${money(c.tg)}</strong></td><td class="r num">${money(c.ti)}</td><td class="r num">${money(c.td)}</td><td class="r num ${res < 0 ? 'neg' : ''}">${money(res)}</td></tr>`; };
+  const byDay = {};
+  for (const g of items(S.mes)) {
+    const r = (byDay[g.fecha] ||= { n: 0, ing: 0, dep: 0, gas: z(), tg: 0 }), tp = tipoOf(g); r.n++;
+    if (tp === 'ingreso') r.ing += g.monto; else if (tp === 'deposito') r.dep += g.monto; else { r.tg += g.monto; for (const [s, a] of shares(g)) r.gas[s] += a; }
+  }
+  const days = Object.keys(byDay).sort().reverse(), c = calc(S.mes);
+  const dLabel = d => { const dt = new Date(d + 'T12:00:00'), w = dt.toLocaleDateString('es', { weekday: 'long' }); return `${w[0].toUpperCase() + w.slice(1)} ${dt.getDate()}`; };
+  const cellDl = (sp, val) => val ? dl(sp, money(val)) : '<span class="hint">—</span>';
+  v.innerHTML = `<div class="panel"><div class="panel-head"><h2>Por mes</h2><span class="hint">Toca un mes para ver su detalle por día</span></div>
+    ${meses.length ? `<div class="scroll"><table><thead><tr><th>Mes</th><th class="r">Mov.</th>${SUCS.map(s => `<th class="r">Gastos ${esc(name(s))}</th>`).join('')}<th class="r">Total gastos</th><th class="r">Ingresos</th><th class="r">Depósitos</th><th class="r">Resultado</th></tr></thead><tbody>${meses.map(mrow).join('')}</tbody></table></div>` : '<p class="hint">Aún no hay movimientos.</p>'}</div>
+    <div class="panel"><div class="panel-head"><h2>Por día · ${mLabel(S.mes)}</h2><span class="hint">Toca un día o una cifra para ver y editar sus movimientos</span></div>
+    ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Mov.</th>${SUCS.map(s => `<th class="r">Gastos ${esc(name(s))}</th>`).join('')}<th class="r">Total gastos</th><th class="r">Ingresos</th><th class="r">Depósitos</th></tr></thead><tbody>
+    ${days.map(d => { const r = byDay[d]; return `<tr><td>${dl({ dia: d }, dLabel(d))}</td><td class="r num">${r.n}</td>${SUCS.map(s => `<td class="r num">${cellDl({ dia: d, tipo: 'gasto', suc: s }, r.gas[s])}</td>`).join('')}<td class="r num"><strong>${cellDl({ dia: d, tipo: 'gasto' }, r.tg)}</strong></td><td class="r num">${cellDl({ dia: d, tipo: 'ingreso' }, r.ing)}</td><td class="r num">${cellDl({ dia: d, tipo: 'deposito' }, r.dep)}</td></tr>`; }).join('')}
+    <tr class="foot"><td>Total del mes</td><td class="r num">${items(S.mes).length}</td>${SUCS.map(s => `<td class="r num">${money(c.gas[s])}</td>`).join('')}<td class="r num">${money(c.tg)}</td><td class="r num">${money(c.ti)}</td><td class="r num">${money(c.td)}</td></tr></tbody></table></div>` : `<p class="hint">No hay movimientos en ${mLabel(S.mes)}.</p>`}</div>`;
+}
+
 function renderPresup() {
   const v = $('#v-presupuestos'), c = calc(S.mes);
   v.innerHTML = `<div class="panel presup"><div class="panel-head"><h2>Presupuesto mensual de gastos por sucursal</h2>
@@ -995,7 +1030,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = fals
 function resetForm() {
   S.editId = null; S.editMes = null; S.editCxp = null;
   $('#gFormTitle').textContent = 'Registrar movimiento'; $('#g-cancel').hidden = true;
-  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-comp').checked = false; $('#g-err').textContent = '';
+  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-nota').value = ''; $('#g-comp').checked = false; $('#g-err').textContent = '';
   const t = todayISO(); $('#g-fecha').value = t.slice(0, 7) === S.mes ? t : S.mes + '-01';
   applyTipo(S.tipo, true);
 }
@@ -1006,7 +1041,7 @@ $('#gForm').addEventListener('submit', async e => {
   if (!(monto > 0)) { err.textContent = 'Escribe un monto mayor que cero.'; return; }
   const tp = S.tipo;
   const g = { id: S.editId || uid(), tipo: tp, fecha, monto, suc: $('#g-suc').value, cat: tp === 'deposito' ? 'deposito' : $('#g-cat').value,
-    desc: $('#g-desc').value.trim(), prov: $('#g-prov').value.trim(), metodo: $('#g-met').value, comp: $('#g-comp').checked, ts: new Date().toISOString() };
+    desc: $('#g-desc').value.trim(), prov: $('#g-prov').value.trim(), metodo: $('#g-met').value, comp: $('#g-comp').checked, nota: $('#g-nota').value.trim(), ts: new Date().toISOString() };
   const linked = S.editCxp; if (linked) g.cxp = linked;
   const m = fecha.slice(0, 7), btn = $('#g-save'); btn.disabled = true; err.textContent = '';
   try {
@@ -1033,7 +1068,7 @@ document.addEventListener('click', async e => {
     applyTipo(tipoOf(g), false);
     $('#g-fecha').value = g.fecha; $('#g-monto').value = g.monto; $('#g-suc').value = g.suc;
     if (tipoOf(g) !== 'deposito') $('#g-cat').value = g.cat;
-    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp;
+    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-nota').value = g.nota || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp;
     $('#gFormTitle').textContent = 'Editar ' + TIPO_N[tipoOf(g)].toLowerCase(); $('#g-save').textContent = 'Guardar cambios'; $('#g-cancel').hidden = false; $('#g-err').textContent = '';
     renderList(); $('#gForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#g-monto').focus({ preventScroll: true }); return;
   }
@@ -1079,6 +1114,7 @@ document.addEventListener('click', async e => {
     return;
   }
   if (t.id === 'csvBtn') { exportCsv(); return; }
+  if (t.dataset.mesGo) { setMes(t.dataset.mesGo); return; }
   if (t.dataset.drill) { try { openSheet(JSON.parse(t.dataset.drill)); } catch (_) {} return; }
   if (t.dataset.act !== undefined) { const a = S.alertActs[+t.dataset.act]; if (!a) return;
     if (a.go) { location.hash = '#suplidores'; setTimeout(() => { $('#cf-est').value = a.go; renderCList(); }, 0); } else openSheet(a.d); return; }
@@ -1110,8 +1146,8 @@ async function exportCsv() {
   const list = filtered().reverse();
   if (!list.length) { toast('No hay movimientos para descargar.'); return; }
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const headR = ['Fecha', 'Tipo', 'Sucursal', 'Categoría', 'Descripción', 'Proveedor / cliente / banco', 'Forma de pago', 'Comprobante', 'Monto', ...SUCS.map(s => 'Asignado a ' + name(s))];
-  const rows = list.map(g => { const tp = tipoOf(g); return [g.fecha, TIPO_N[tp], name(g.suc), catName(g), g.desc, g.prov, METODOS[tp][g.metodo] || '', g.comp ? 'Sí' : 'No', g.monto.toFixed(2),
+  const headR = ['Fecha', 'Tipo', 'Sucursal', 'Categoría', 'Descripción', 'Proveedor / cliente / banco', 'Forma de pago', 'Comprobante', 'Comentario', 'Monto', ...SUCS.map(s => 'Asignado a ' + name(s))];
+  const rows = list.map(g => { const tp = tipoOf(g); return [g.fecha, TIPO_N[tp], name(g.suc), catName(g), g.desc, g.prov, METODOS[tp][g.metodo] || '', g.comp ? 'Sí' : 'No', g.nota || '', g.monto.toFixed(2),
     ...SUCS.map(s => (g.suc === 'all' ? g.monto / 3 : g.suc === s ? g.monto : 0).toFixed(2))]; });
   const csv = '﻿' + [headR, ...rows].map(r => r.map(q).join(',')).join('\r\n');
   if (!S.dl) { toast('La descarga no está disponible en esta vista.'); return; }
@@ -1123,7 +1159,7 @@ function setMes(m) { S.mes = m; S.confirmDel = null; S.openCat = null; if (S.she
 $('#prevM').addEventListener('click', () => setMes(addM(S.mes, -1)));
 $('#nextM').addEventListener('click', () => setMes(addM(S.mes, 1)));
 function route() { let h = location.hash.slice(1); if (h === 'gastos') h = 'movimientos'; if (h === 'porpagar') h = 'suplidores';
-  S.tab = ['resumen', 'movimientos', 'suplidores', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
+  S.tab = ['resumen', 'movimientos', 'fechas', 'suplidores', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
 window.addEventListener('hashchange', route);
 
 function subscribe() {

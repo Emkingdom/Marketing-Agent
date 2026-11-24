@@ -7,7 +7,7 @@
  * No borres ni cambies el orden de las columnas de esas pestañas.
  */
 
-const MOV_COLS = ['id', 'tipo', 'fecha', 'mes', 'monto', 'suc', 'cat', 'desc', 'prov', 'metodo', 'comp', 'cxp', 'ts'];
+const MOV_COLS = ['id', 'tipo', 'fecha', 'mes', 'monto', 'suc', 'cat', 'desc', 'prov', 'metodo', 'comp', 'cxp', 'ts', 'nota'];
 const FAC_COLS = ['id', 'suplidor', 'num', 'monto', 'fecha', 'vence', 'plazo', 'aviso', 'suc', 'cat', 'nota', 'pagos', 'ts'];
 
 function doGet() {
@@ -35,6 +35,8 @@ function sheet_(name, cols, montoCol) {
 
 function setup_() {
   const mov = sheet_('Movimientos', MOV_COLS, 5);
+  // Agrega encabezados de columnas nuevas (por ejemplo "nota") a hojas creadas con una versión anterior
+  if (mov.getLastColumn() < MOV_COLS.length) mov.getRange(1, 1, 1, MOV_COLS.length).setValues([MOV_COLS]).setFontWeight('bold');
   sheet_('Facturas', FAC_COLS, 4);
   const cfg = sheet_('Config', ['clave', 'valor']);
   // Carga los datos iniciales una sola vez, si la hoja está vacía y existe Datos.gs
@@ -68,7 +70,7 @@ function rowToMov_(r) {
   g.id = str_(g.id); g.fecha = str_(g.fecha); g.mes = g.fecha.slice(0, 7);
   g.monto = Number(g.monto) || 0;
   g.comp = g.comp === true || g.comp === 'Sí' || g.comp === 'TRUE';
-  ['tipo', 'suc', 'cat', 'desc', 'prov', 'metodo', 'ts', 'cxp'].forEach(c => { g[c] = str_(g[c]); });
+  ['tipo', 'suc', 'cat', 'desc', 'prov', 'metodo', 'ts', 'cxp', 'nota'].forEach(c => { g[c] = str_(g[c]); });
   if (!g.cxp) delete g.cxp;
   return g;
 }

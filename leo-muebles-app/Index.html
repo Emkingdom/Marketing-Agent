@@ -361,6 +361,7 @@ const GCATS = [
   { id: 'p_fermin', n: 'Fermín', t: 'personal' },
   { id: 'p_maria', n: 'María', t: 'personal' },
   { id: 'p_eliza', n: 'Eliza', t: 'personal' },
+  { id: 'p_empleados', n: 'Empleados y otros', t: 'personal' },
   { id: 'personales', n: 'Casa y otros personales', t: 'personal' },
 ];
 const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
@@ -759,7 +760,7 @@ function incTable(c) {
     <tr class="foot"><td>${dl({ tipo: 'ingreso' }, 'Total')}</td>${SUCS.map(s => `<td class="r num">${dl({ tipo: 'ingreso', suc: s }, money(c.ing[s]))}</td>`).join('')}<td class="r num">${dl({ tipo: 'ingreso' }, money(c.ti))}</td></tr></tbody></table></div>`;
 }
 function gasTable(c) {
-  const rows = GCATS.filter(k => c.gcat[k.id] || SUCS.some(s => budget(s, k.id)));
+  const rows = GCATS.filter(k => c.gcat[k.id] || SUCS.some(s => budget(s, k.id)) || (k.t === 'personal' && c.personal));
   if (!rows.length) return `<p class="hint">Sin gastos registrados este mes.</p>`;
   const cell = (k, s) => { const v = c.gcat[k.id]?.[s] || 0, b = budget(s, k.id);
     const bl = b ? `<span class="cell-b ${level(v / b) === 'good' ? '' : level(v / b)}">${pct(v / b)} de ${money(b)}</span>` : '';

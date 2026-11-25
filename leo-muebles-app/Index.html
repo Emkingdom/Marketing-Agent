@@ -1096,15 +1096,14 @@ function renderCaja() {
     ${sucChips('Las 3 juntas')}
     <div class="kpis">${kpi('Efectivo que entró', T('ef'), { tipo: 'ingreso', metodo: ['efectivo'], ...sc })}${kpi('Gastos y fondos', T('gasEf') + T('fonEf'), { cash: true, tipos: ['gasto', 'fondo'], ...sc })}${kpi('Efectivo − gastos', esp)}${kpi('Depositado', T('dep'), { tipo: 'deposito', ...sc })}${kpi(dif < -1 ? 'Falta por depositar' : 'Diferencia', dif < -1 ? -dif : dif, null, true, signCls(dif))}</div>
     <div class="panel"><div class="panel-head"><h2>Cuadre diario${S.vsuc ? ' · ' + esc(name(S.vsuc)) : ' · las 3 juntas'}</h2><span class="hint">${whereTxt()}</span></div>
-    ${rows.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th><th class="r">Acumulado</th></tr></thead><tbody>
+    ${rows.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia del día</th></tr></thead><tbody>
       ${rows.map(({ k, x, esp, dif, acc }) => `<tr><td>${dl({ dia: k, ...sc }, dayName(k))}</td>
         <td class="r num">${cellM({ dia: k, tipo: 'ingreso', metodo: ['efectivo'], ...sc }, x.ef)}</td>
         <td class="r num">${cellM({ dia: k, cash: true, tipos: ['gasto', 'fondo'], ...sc }, x.gasEf + x.fonEf)}</td>
         <td class="r num"><strong>${money(esp)}</strong></td>
         <td class="r num">${cellM({ dia: k, tipo: 'deposito', ...sc }, x.dep)}</td>
-        <td class="r num ${signCls(dif)}">${Math.abs(dif) < 1 ? '0' : sgn(dif)}</td>
-        <td class="r num ${signCls(acc)}"><strong>${Math.abs(acc) < 1 ? '0' : sgn(acc)}</strong></td></tr>`).join('')}
-      <tr class="foot"><td>Total</td><td class="r num">${money(T('ef'))}</td><td class="r num">${money(T('gasEf') + T('fonEf'))}</td><td class="r num">${money(esp)}</td><td class="r num">${money(T('dep'))}</td><td class="r num ${signCls(dif)}">${sgn(dif)}</td><td></td></tr></tbody></table></div>
+        <td class="r num ${signCls(dif)}"><strong>${Math.abs(dif) < 1 ? '<span class="hint">Cuadra</span>' : sgn(dif)}</strong></td></tr>`).join('')}
+      <tr class="foot"><td>Total acumulado</td><td class="r num">${money(T('ef'))}</td><td class="r num">${money(T('gasEf') + T('fonEf'))}</td><td class="r num">${money(esp)}</td><td class="r num">${money(T('dep'))}</td><td class="r num ${signCls(dif)}">${sgn(dif)}</td></tr></tbody></table></div>
       <p class="hint" style="margin:8px 0 0"><span class="neg">Negativo = falta depositar</span> · <span class="pos">positivo = se depositó de más</span></p>`
       : `<p class="hint">No hay movimientos de efectivo en ${whereTxt()}.</p>`}</div>
     <div class="panel"><div class="panel-head"><h2>Depósitos por cuenta</h2><a class="hint" href="#ajustes">Administrar cuentas</a></div>${depTable(S.mes)}</div>`;

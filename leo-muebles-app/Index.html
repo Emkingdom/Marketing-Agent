@@ -207,7 +207,7 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
 .alerts li .lnk { margin-left: 8px; }
 .nd summary { cursor: pointer; list-style: none; } .nd summary::-webkit-details-marker { display: none; }
 .nd[open] summary .lnk { display: none; }
-.nd table { margin-top: 10px; background: var(--card); border-radius: var(--r-sm); }
+.nd table { margin-top: 10px; font-size: 13px; background: var(--card); border-radius: var(--r-sm); }
 .chart [data-mes] { cursor: pointer; }
 .chart rect[data-mes]:hover { opacity: .8; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -506,6 +506,20 @@ function alerts(m) {
   }
   if (near.length) out.push({ act: { d: { tipo: 'gasto' } }, l: 'warn', tag: 'Cerca', t: near.length <= 3 ? `Arriba del 85 % del presupuesto: ${near.join('; ')}.`
     : `${near.length} partidas van arriba del 85 % de su presupuesto. Revisa la tabla de gastos (cifras en color).` });
+  {
+    const rows = SUCS.map(x => { const dd = daily(m, x), ks = Object.keys(dd), t = f => ks.reduce((a, k) => a + dd[k][f], 0);
+      const ef = t('ef'), sal = t('gasEf') + t('fonEf'), dep = t('dep'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
+    const T = rows.reduce((a, o) => { for (const f of ['ef', 'sal', 'net', 'dep', 'dif']) a[f] += o[f]; return a; }, { ef: 0, sal: 0, net: 0, dep: 0, dif: 0 });
+    if (T.ef || T.dep) {
+      const dtx = n => Math.abs(n) < 1 ? 'Cuadra' : n < 0 ? `Falta ${money(-n)}` : `De más ${money(n)}`;
+      const head = Math.abs(T.dif) < 1 ? 'Las 3 sucursales cuadran: todo el efectivo (menos gastos y fondos) está depositado.'
+        : T.dif < 0 ? `<strong>Déficit total de las 3 sucursales: ${money(-T.dif)}</strong> sin depositar.` : `Las 3 sucursales depositaron <strong>${money(T.dif)}</strong> más de lo esperado.`;
+      out.push({ act: { tab: 'caja', suc: '' }, l: T.dif < -1 ? 'bad' : 'info', tag: 'Déficit total', html: `<details class="nd"><summary>${head} (efectivo que entró − gastos y fondos − depositado) <span class="lnk">Ver detalle</span></summary>
+        <table><thead><tr><th>Sucursal</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
+        ${rows.map(o => `<tr><td>${esc(name(o.x))}</td><td class="r num">${money(o.ef)}</td><td class="r num">${money(o.sal)}</td><td class="r num">${money(o.net)}</td><td class="r num">${money(o.dep)}</td><td class="r num ${o.dif < -1 ? 'neg' : o.dif > 1 ? 'pos' : ''}">${dtx(o.dif)}</td></tr>`).join('')}
+        <tr class="foot"><td>Total</td><td class="r num">${money(T.ef)}</td><td class="r num">${money(T.sal)}</td><td class="r num">${money(T.net)}</td><td class="r num">${money(T.dep)}</td><td class="r num ${T.dif < -1 ? 'neg' : ''}">${dtx(T.dif)}</td></tr></tbody></table></details>` });
+    }
+  }
   for (const s of SUCS) {
     const dd = daily(m, s), ks = Object.keys(dd), t = f => ks.reduce((x, k) => x + dd[k][f], 0);
     const dif = t('dep') - (t('ef') - t('gasEf') - t('fonEf'));

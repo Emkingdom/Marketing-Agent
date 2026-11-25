@@ -205,6 +205,9 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
 @media (max-width: 560px) { .ditem { grid-template-columns: 1fr 1fr !important; } .ditem .wide { grid-column: 1 / -1 !important; } .sheet-filters { grid-template-columns: 1fr; } }
 .cellbtn.big-btn { font-size: inherit; font-weight: inherit; letter-spacing: inherit; text-decoration-thickness: 2px; }
 .alerts li .lnk { margin-left: 8px; }
+.nd summary { cursor: pointer; list-style: none; } .nd summary::-webkit-details-marker { display: none; }
+.nd[open] summary .lnk { display: none; }
+.nd table { margin-top: 10px; background: var(--card); border-radius: var(--r-sm); }
 .chart [data-mes] { cursor: pointer; }
 .chart rect[data-mes]:hover { opacity: .8; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -517,6 +520,14 @@ function alerts(m) {
     if (v > avg * 1.3 && v - avg >= Math.max(1, c.gas[s] * 0.03))
       out.push({ act: { d: { tipo: 'gasto', cat: k.id, suc: s } }, l: 'warn', tag: 'Subió', t: `${name(s)} lleva ${money(v)} en ${k.n}, ${pct(v / avg - 1)} más que su promedio reciente (${money(avg)}).` });
   }
+  const nd = (S.cfg.notasDep || []).filter(x => (x.fecha || '').slice(0, 7) === m).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  if (nd.length) {
+    const tot = nd.reduce((a, x) => a + (Number(x.monto) || 0), 0);
+    out.push({ l: 'warn', tag: 'Depositado en hoja', html: `<details class="nd"><summary>En la hoja de gastos aparecen <strong>${nd.length} "Depositado"</strong> por <strong>${money(tot)}</strong>. Solo como aviso: no se suman a nada. <span class="lnk">Ver detalle</span></summary>
+      <table><thead><tr><th>Fecha en que entró</th><th>Sucursal</th><th>Como aparece</th><th class="r">Monto</th></tr></thead><tbody>
+      ${nd.map(x => `<tr><td class="num">${fmtDate(x.fecha)}</td><td>${esc(name(x.suc))}</td><td>${esc(x.desc || 'Depositado')}</td><td class="r num">${money(x.monto, true)}</td></tr>`).join('')}
+      <tr class="foot"><td colspan="3">Total</td><td class="r num">${money(tot, true)}</td></tr></tbody></table></details>` });
+  }
   const sinMonto = items(m).filter(g => !g.monto).length;
   if (sinMonto) out.push({ act: { d: { sinMonto: true } }, l: 'warn', tag: 'Sin monto', t: `${sinMonto} ${sinMonto === 1 ? 'movimiento está' : 'movimientos están'} sin monto. Complétalos cuando tengas la cifra.` });
   const ord = { bad: 0, warn: 1, info: 2 };
@@ -649,7 +660,7 @@ function renderResumen() {
 
   const al = alerts(m);
   S.alertActs = al.map(a => a.act || null);
-  const alertsHtml = al.length ? `<ul class="alerts">${al.map((a, i) => `<li class="${a.l}"><span class="pill">${a.tag}</span><span>${esc(a.t)}${a.act ? `<button class="lnk" data-act="${i}">${a.act.go ? 'Ver facturas' : a.act.tab ? 'Ver cuadre' : 'Ver y editar'}</button>` : ''}</span></li>`).join('')}</ul>`
+  const alertsHtml = al.length ? `<ul class="alerts">${al.map((a, i) => `<li class="${a.l}"><span class="pill">${a.tag}</span><span style="min-width:0">${a.html || esc(a.t)}${a.act ? `<button class="lnk" data-act="${i}">${a.act.go ? 'Ver facturas' : a.act.tab ? 'Ver cuadre' : 'Ver y editar'}</button>` : ''}</span></li>`).join('')}</ul>`
     : `<p class="hint">Nada fuera de lo normal este mes.</p>`;
 
   v.innerHTML = `<div class="cards">${cards}${total}</div>
@@ -1243,6 +1254,7 @@ document.addEventListener('click', async e => {
     try { for (const [m, doc] of Object.entries(d.months || {})) { const its = Object.fromEntries(Object.entries(doc.items || {}).filter(([, g]) => g)); n += Object.keys(its).length;
         const ref = S.db.doc('meses/' + m); const sn = await ref.get(); if (sn.exists) await ref.update({ items: its }); else await ref.set({ items: its }); }
       for (const [id, f] of Object.entries(d.cxp || {})) await S.db.doc('cxp/' + id).set(f);
+      if (d.cfg && d.cfg.notasDep) await saveCfg({ ...S.cfg, notasDep: d.cfg.notasDep });
       S.bkData = null; $('#bkConfirm').hidden = true; $('#bkInfo').hidden = true; $('#bkFile').value = '';
       toast(`Se agregaron ${n} movimientos`); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'bkYes') { try { await S.db.importAll(S.bkData); S.bkData = null; toast('Copia restaurada'); render(); } catch (x) { toast(errMsg(x)); } return; }

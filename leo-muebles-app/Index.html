@@ -227,6 +227,18 @@ tr.drill > td { background: var(--hover); padding: 4px 10px 14px; }
 .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
 td.pos, strong.pos { color: var(--good); }
+.gtable tr.sub td { background: var(--ink); color: var(--ground); font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-bottom: none; padding-top: 11px; padding-bottom: 11px; }
+.gtable tr.sub td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); } .gtable tr.sub td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.gtable tr.sub .cellbtn, .gtable tr.sub .catbtn, .gtable tr.sub .hint { color: inherit; text-decoration-color: currentColor; opacity: 1; }
+.gtable tr.sub button { text-transform: inherit; letter-spacing: inherit; font-weight: inherit; font-size: inherit; }
+.gtable tr.cat td { font-size: 14px; }
+.gtable tr.cat td:first-child { position: relative; padding-left: 34px; }
+.gtable tr.cat td:first-child::before { content: ""; position: absolute; left: 16px; top: 0; bottom: 0; border-left: 2px solid var(--hairline); }
+.gtable tr.cat td:first-child::after { content: ""; position: absolute; left: 16px; top: 50%; width: 10px; border-top: 2px solid var(--hairline); }
+.gtable tr.cat .catbtn::before { content: none; }
+.gtable tr.cat .cell-b { font-size: 11px; }
+.gtable tr.gap td { border: none; padding: 5px; background: transparent; }
+.gtable tr.foot td { border-top: 2px solid var(--ink); font-size: 15px; padding-top: 12px; }
 .presup input { width: 100%; min-width: 90px; text-align: right; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--field); }
 .empty { text-align: center; padding: 40px 16px; display: grid; gap: 12px; justify-items: center; }
 .empty h2 { font-size: 22px; }
@@ -826,11 +838,12 @@ function gasTable(c) {
   const cell = (k, s) => { const v = c.gcat[k.id]?.[s] || 0, b = budget(s, k.id);
     const bl = b ? `<span class="cell-b ${level(v / b) === 'good' ? '' : level(v / b)}">${pct(v / b)} de ${money(b)}</span>` : '';
     return `<td class="r num">${v ? cellBtn('gasto', k.id, s, money(v)) : '<span class="hint">—</span>'}${bl}</td>`; };
-  const body = t => rows.filter(k => k.t === t).map(k => `<tr class="catrow${isOpen('gasto', k.id) ? ' open' : ''}"><td>${c.gcat[k.id] ? catBtn('gasto', k) : esc(k.n)}</td>${SUCS.map(s => cell(k, s)).join('')}<td class="r num"><strong>${c.gcat[k.id] ? dl({ tipo: 'gasto', cat: k.id }, money(c.gcat[k.id].t)) : money(0)}</strong><span class="cell-b">${c.tg ? pct((c.gcat[k.id]?.t || 0) / c.tg) : ''}</span></td></tr>${drill('gasto', k.id)}`).join('');
+  const body = t => rows.filter(k => k.t === t).map(k => `<tr class="catrow cat${isOpen('gasto', k.id) ? ' open' : ''}"><td>${c.gcat[k.id] ? catBtn('gasto', k) : esc(k.n)}</td>${SUCS.map(s => cell(k, s)).join('')}<td class="r num"><strong>${c.gcat[k.id] ? dl({ tipo: 'gasto', cat: k.id }, money(c.gcat[k.id].t)) : money(0)}</strong><span class="cell-b">${c.tg ? pct((c.gcat[k.id]?.t || 0) / c.tg) : ''}</span></td></tr>${drill('gasto', k.id)}`).join('');
   const sub = (t, lbl) => { const tot = s => rows.filter(k => k.t === t).reduce((a, k) => a + (c.gcat[k.id]?.[s] || 0), 0);
     return `<tr class="sub"><td>${dl({ tipo: 'gasto', grupo: t }, lbl)}</td>${SUCS.map(s => `<td class="r num">${tot(s) ? dl({ tipo: 'gasto', grupo: t, suc: s }, money(tot(s))) : money(0)}</td>`).join('')}<td class="r num">${dl({ tipo: 'gasto', grupo: t }, money(c[t]))}</td></tr>`; };
-  return `<div class="scroll"><table>${head()}<tbody>${sub('fijo', 'Fijos')}${body('fijo')}${sub('variable', 'Variables')}${body('variable')}${rows.some(k => k.t === 'personal') ? sub('personal', 'Personal') + body('personal') : ''}
-    <tr class="foot"><td>${dl({ tipo: 'gasto' }, 'Total')}</td>${SUCS.map(s => `<td class="r num">${dl({ tipo: 'gasto', suc: s }, money(c.gas[s]))}</td>`).join('')}<td class="r num">${dl({ tipo: 'gasto' }, money(c.tg))}</td></tr></tbody></table></div>`;
+  const gap = `<tr class="gap"><td colspan="${SUCS.length + 2}"></td></tr>`;
+  return `<div class="scroll"><table class="gtable">${head()}<tbody>${sub('fijo', 'Gastos fijos')}${body('fijo')}${gap}${sub('variable', 'Gastos variables')}${body('variable')}${rows.some(k => k.t === 'personal') ? gap + sub('personal', 'Gastos personales') + body('personal') : ''}${gap}
+    <tr class="foot"><td>${dl({ tipo: 'gasto' }, 'Total de gastos')}</td>${SUCS.map(s => `<td class="r num">${dl({ tipo: 'gasto', suc: s }, money(c.gas[s]))}</td>`).join('')}<td class="r num">${dl({ tipo: 'gasto' }, money(c.tg))}</td></tr></tbody></table></div>`;
 }
 function fonTable(c) {
   const rows = FCATS.filter(k => c.fcat[k.id]);
@@ -845,9 +858,10 @@ function gasTableSuc(c, suc) {
   const grp = t => rows.filter(k => k.t === t).reduce((a, k) => a + amt(k.id), 0);
   const block = (t, lbl) => { const ks = rows.filter(k => k.t === t); if (!ks.length) return '';
     return `<tr class="sub"><td>${dl({ tipo: 'gasto', grupo: t, suc }, lbl)}</td><td class="r num">${dl({ tipo: 'gasto', grupo: t, suc }, money(grp(t)))}</td><td class="r num">${pct(grp(t) / tot)}</td></tr>`
-      + ks.map(k => `<tr><td>${dl({ tipo: 'gasto', cat: k.id, suc }, esc(k.n))}</td><td class="r num">${dl({ tipo: 'gasto', cat: k.id, suc }, money(amt(k.id)))}</td><td class="r num hint">${pct(amt(k.id) / tot)}</td></tr>`).join(''); };
-  return `<div class="scroll"><table><thead><tr><th>Categoría</th><th class="r">${esc(name(suc))}</th><th class="r">% del total</th></tr></thead><tbody>${block('fijo', 'Fijos')}${block('variable', 'Variables')}${block('personal', 'Personal')}
-    <tr class="foot"><td>${dl({ tipo: 'gasto', suc }, 'Total')}</td><td class="r num">${dl({ tipo: 'gasto', suc }, money(tot))}</td><td></td></tr></tbody></table></div>`;
+      + ks.map(k => `<tr class="cat"><td>${dl({ tipo: 'gasto', cat: k.id, suc }, esc(k.n))}</td><td class="r num">${dl({ tipo: 'gasto', cat: k.id, suc }, money(amt(k.id)))}</td><td class="r num hint">${pct(amt(k.id) / tot)}</td></tr>`).join(''); };
+  const gap = '<tr class="gap"><td colspan="3"></td></tr>';
+  return `<div class="scroll"><table class="gtable"><thead><tr><th>Categoría</th><th class="r">${esc(name(suc))}</th><th class="r">% del total</th></tr></thead><tbody>${[block('fijo', 'Gastos fijos'), block('variable', 'Gastos variables'), block('personal', 'Gastos personales')].filter(Boolean).join(gap)}${gap}
+    <tr class="foot"><td>${dl({ tipo: 'gasto', suc }, 'Total de gastos')}</td><td class="r num">${dl({ tipo: 'gasto', suc }, money(tot))}</td><td></td></tr></tbody></table></div>`;
 }
 function cajaTable(c) {
   const row = (lbl, f, sign, sp) => `<tr><td>${dl(sp, lbl)}</td>${SUCS.map(s => `<td class="r num">${sign}${f(s) ? dl({ ...sp, suc: s }, money(f(s))) : money(0)}</td>`).join('')}</tr>`;

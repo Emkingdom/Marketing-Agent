@@ -523,7 +523,7 @@ function alerts(m) {
   const nd = (S.cfg.notasDep || []).filter(x => (x.fecha || '').slice(0, 7) === m).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   if (nd.length) {
     const tot = nd.reduce((a, x) => a + (Number(x.monto) || 0), 0);
-    out.push({ l: 'warn', tag: 'Depositado en hoja', html: `<details class="nd"><summary>En la hoja de gastos aparecen <strong>${nd.length} "Depositado"</strong> por <strong>${money(tot)}</strong>. Solo como aviso: no se suman a nada. <span class="lnk">Ver detalle</span></summary>
+    out.push({ l: 'warn', tag: 'Depósitos en hoja', html: `<details class="nd"><summary>En la hoja de gastos aparecen <strong>${nd.length} partidas de depósito</strong> ("Depositado" y "Recibo Manual") por <strong>${money(tot)}</strong>. Solo como aviso: no se suman a nada. <span class="lnk">Ver detalle</span></summary>
       <table><thead><tr><th>Fecha en que entró</th><th>Sucursal</th><th>Como aparece</th><th class="r">Monto</th></tr></thead><tbody>
       ${nd.map(x => `<tr><td class="num">${fmtDate(x.fecha)}</td><td>${esc(name(x.suc))}</td><td>${esc(x.desc || 'Depositado')}</td><td class="r num">${money(x.monto, true)}</td></tr>`).join('')}
       <tr class="foot"><td colspan="3">Total</td><td class="r num">${money(tot, true)}</td></tr></tbody></table></details>` });

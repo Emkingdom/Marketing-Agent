@@ -1053,15 +1053,11 @@ function renderGastos() {
       + ks.sort((a, b) => amt(b.id) - amt(a.id)).map(k => `<tr><td>${dl({ tipo: 'gasto', cat: k.id, ...sc }, esc(k.n))}</td><td class="r num">${dl({ tipo: 'gasto', cat: k.id, ...sc }, money(amt(k.id)))}</td><td class="r num hint">${total ? pct(amt(k.id) / total) : ''}</td></tr>`).join(''); };
   v.innerHTML = `${sucChips()}
     <div class="kpis">${kpi('Total de gastos', total, { tipo: 'gasto', ...sc }, true)}${kpi('Fijos', grp('fijo'), { tipo: 'gasto', grupo: 'fijo', ...sc })}${kpi('Variables', grp('variable'), { tipo: 'gasto', grupo: 'variable', ...sc })}${kpi('Personal', grp('personal'), { tipo: 'gasto', grupo: 'personal', ...sc })}</div>
-    <div class="two">
-      <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">${whereTxt()}</span></div>
-      ${total ? `<div class="scroll"><table><thead><tr><th>Categoría</th><th class="r">Monto</th><th class="r">%</th></tr></thead><tbody>${groupRows('fijo', 'Fijos')}${groupRows('variable', 'Variables')}${groupRows('personal', 'Personal')}
-        <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td><td></td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>
-      <div class="panel"><div class="panel-head"><h2>Gastos por día</h2><span class="hint">${whereTxt()}</span></div>
+    <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">${mLabel(S.mes)} · todas las sucursales · lo compartido se divide entre las 3</span></div>${gasTable(c)}</div>
+    <div class="panel"><div class="panel-head"><h2>Gastos por día</h2><span class="hint">${whereTxt()}</span></div>
       ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Gastos del día</th></tr></thead><tbody>
         ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'gasto', ...sc }, dayName(k))}</td><td class="r num">${dl({ dia: k, tipo: 'gasto', ...sc }, money(d[k].gas))}</td></tr>`).join('')}
-        <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>
-    </div>`;
+        <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>`;
 }
 
 function renderFondos() {

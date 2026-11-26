@@ -531,22 +531,22 @@ function alerts(m) {
     : `${near.length} partidas van arriba del 85 % de su presupuesto. Revisa la tabla de gastos (cifras en color).` });
   {
     const rows = SUCS.map(x => { const dd = daily(m, x), ks = Object.keys(dd), t = f => ks.reduce((a, k) => a + dd[k][f], 0);
-      const ef = t('efc'), sal = t('gasEf') + t('fonEf'), dep = t('dep'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
+      const ef = t('ef'), sal = t('gasEf') + t('fonEf'), dep = t('depEf'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
     const T = rows.reduce((a, o) => { for (const f of ['ef', 'sal', 'net', 'dep', 'dif']) a[f] += o[f]; return a; }, { ef: 0, sal: 0, net: 0, dep: 0, dif: 0 });
     if (T.ef || T.dep) {
       const dtx = n => Math.abs(n) < 1 ? 'Cuadra' : n < 0 ? `Falta ${money(-n)}` : `De más ${money(n)}`;
       const head = Math.abs(T.dif) < 1 ? 'Las 3 sucursales cuadran: todo el efectivo (menos gastos y fondos) está depositado.'
         : T.dif < 0 ? `<strong>Déficit total de las 3 sucursales: ${money(-T.dif)}</strong> sin depositar.` : `Las 3 sucursales depositaron <strong>${money(T.dif)}</strong> más de lo esperado.`;
-      out.push({ act: { tab: 'caja', suc: '' }, l: T.dif < -1 ? 'bad' : 'info', tag: 'Déficit total', html: `<details class="nd"><summary>${head} (efectivo y cheques que entraron − gastos y fondos − depositado) <span class="lnk">Ver detalle</span></summary>
-        <table><thead><tr><th>Sucursal</th><th class="r">Efectivo y cheques que entraron</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
+      out.push({ act: { tab: 'caja', suc: '' }, l: T.dif < -1 ? 'bad' : 'info', tag: 'Déficit total', html: `<details class="nd"><summary>${head} (efectivo que entró − gastos y fondos − depositado) <span class="lnk">Ver detalle</span></summary>
+        <table><thead><tr><th>Sucursal</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
         ${rows.map(o => `<tr><td>${esc(name(o.x))}</td><td class="r num">${money(o.ef)}</td><td class="r num">${money(o.sal)}</td><td class="r num">${money(o.net)}</td><td class="r num">${money(o.dep)}</td><td class="r num ${o.dif < -1 ? 'neg' : o.dif > 1 ? 'pos' : ''}">${dtx(o.dif)}</td></tr>`).join('')}
         <tr class="foot"><td>Total</td><td class="r num">${money(T.ef)}</td><td class="r num">${money(T.sal)}</td><td class="r num">${money(T.net)}</td><td class="r num">${money(T.dep)}</td><td class="r num ${T.dif < -1 ? 'neg' : ''}">${dtx(T.dif)}</td></tr></tbody></table></details>` });
     }
   }
   for (const s of SUCS) {
     const dd = daily(m, s), ks = Object.keys(dd), t = f => ks.reduce((x, k) => x + dd[k][f], 0);
-    const dif = t('dep') - (t('efc') - t('gasEf') - t('fonEf'));
-    if (dif < -1) out.push({ act: { tab: 'caja', suc: s }, l: 'warn', tag: 'Depósitos', t: `${name(s)}: falta depositar ${money(-dif)} (efectivo y cheques que entraron − gastos y fondos − lo depositado).` });
+    const dif = t('depEf') - (t('ef') - t('gasEf') - t('fonEf'));
+    if (dif < -1) out.push({ act: { tab: 'caja', suc: s }, l: 'warn', tag: 'Depósitos', t: `${name(s)}: falta depositar ${money(-dif)} (efectivo que entró − gastos y fondos − lo depositado).` });
     else if (dif > 1) out.push({ act: { tab: 'caja', suc: s }, l: 'info', tag: 'Depósitos', t: `${name(s)} depositó ${money(dif)} más de lo esperado. Puede ser un depósito que incluyó dinero de otra sucursal.` });
   }
   const prev = [1, 2, 3].map(k => calc(addM(m, -k)));
@@ -1093,11 +1093,11 @@ function daily(m, suc) {
   const d = {};
   for (const g of items(m)) {
     const a = shareOf(g, suc); if (!a) continue;
-    const r = (d[g.fecha] ||= { ef: 0, tr: 0, tj: 0, ch: 0, ing: 0, gas: 0, gasEf: 0, fon: 0, fonEf: 0, dep: 0 }), tp = tipoOf(g);
+    const r = (d[g.fecha] ||= { ef: 0, tr: 0, tj: 0, ch: 0, ing: 0, gas: 0, gasEf: 0, fon: 0, fonEf: 0, dep: 0, depEf: 0, depCh: 0 }), tp = tipoOf(g);
     if (tp === 'ingreso') { r.ing += a; r[{ efectivo: 'ef', transferencia: 'tr', tarjeta: 'tj', cheque: 'ch' }[g.metodo] || 'ef'] += a; }
     else if (tp === 'gasto') { r.gas += a; if (g.metodo === 'efectivo') r.gasEf += a; }
     else if (tp === 'fondo') { r.fon += a; if (g.metodo === 'efectivo') r.fonEf += a; }
-    else r.dep += a;
+    else { r.dep += a; if (g.metodo === 'cheque') r.depCh += a; else r.depEf += a; }
   }
   for (const k in d) d[k].efc = d[k].ef + d[k].ch;
   return d;
@@ -1154,35 +1154,37 @@ function renderFondos() {
 
 function renderCaja() {
   const v = $('#v-caja'), d = daily(S.mes, S.vsuc), sc = vsc();
-  const days = Object.keys(d).filter(k => d[k].efc || d[k].gasEf || d[k].fonEf || d[k].dep).sort();
+  const days = Object.keys(d).filter(k => d[k].ef || d[k].gasEf || d[k].fonEf || d[k].depEf).sort();
   let acc = 0;
-  const rows = days.map(k => { const x = d[k], esp = x.efc - x.gasEf - x.fonEf, dif = x.dep - esp; acc += dif; return { k, x, esp, dif, acc }; });
-  const T = f => sumDays(d, days, f), esp = T('efc') - T('gasEf') - T('fonEf'), dif = T('dep') - esp;
+  const rows = days.map(k => { const x = d[k], esp = x.ef - x.gasEf - x.fonEf, dif = x.depEf - esp; acc += dif; return { k, x, esp, dif, acc }; });
+  const T = f => sumDays(d, days, f), esp = T('ef') - T('gasEf') - T('fonEf'), dif = T('depEf') - esp;
   const signCls = n => n < -1 ? 'neg' : n > 1 ? 'pos' : '';
   const sgn = n => (n > 0 ? '+' : '') + money(n);
   const porSuc = SUCS.map(x => { const dd = daily(S.mes, x), ks = Object.keys(dd); const t = f => ks.reduce((a, k) => a + dd[k][f], 0);
-    const ef = t('efc'), sal = t('gasEf') + t('fonEf'), dep = t('dep'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
+    const ef = t('ef'), sal = t('gasEf') + t('fonEf'), dep = t('depEf'); return { x, ef, sal, net: ef - sal, dep, dif: dep - (ef - sal) }; });
   const tot = porSuc.reduce((a, o) => { for (const f of ['ef', 'sal', 'net', 'dep', 'dif']) a[f] += o[f]; return a; }, { ef: 0, sal: 0, net: 0, dep: 0, dif: 0 });
   const difTxt = n => Math.abs(n) < 1 ? '<span class="hint">Cuadra</span>' : n < 0 ? `<span class="neg">Falta ${money(-n)}</span>` : `<span class="pos">De más ${money(n)}</span>`;
-  const compRow = (o, lbl, x) => `<tr><td>${lbl}</td><td class="r num">${cellM({ tipo: 'ingreso', metodo: ['efectivo', 'cheque'], ...(x ? { suc: x } : {}) }, o.ef)}</td><td class="r num">${cellM({ cash: true, tipos: ['gasto', 'fondo'], ...(x ? { suc: x } : {}) }, o.sal)}</td><td class="r num"><strong>${money(o.net)}</strong></td><td class="r num">${cellM({ tipo: 'deposito', ...(x ? { suc: x } : {}) }, o.dep)}</td><td class="r num">${difTxt(o.dif)}</td></tr>`;
+  const compRow = (o, lbl, x) => `<tr><td>${lbl}</td><td class="r num">${cellM({ tipo: 'ingreso', metodo: ['efectivo'], ...(x ? { suc: x } : {}) }, o.ef)}</td><td class="r num">${cellM({ cash: true, tipos: ['gasto', 'fondo'], ...(x ? { suc: x } : {}) }, o.sal)}</td><td class="r num"><strong>${money(o.net)}</strong></td><td class="r num">${cellM({ tipo: 'deposito', metodo: ['efectivo'], ...(x ? { suc: x } : {}) }, o.dep)}</td><td class="r num">${difTxt(o.dif)}</td></tr>`;
   const comp = `<div class="panel"><div class="panel-head"><h2>Efectivo vs. depósitos por sucursal</h2><span class="hint">${mLabel(S.mes)}</span></div>
-    <div class="scroll"><table><thead><tr><th>Sucursal</th><th class="r">Efectivo y cheques que entraron</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
+    <div class="scroll"><table><thead><tr><th>Sucursal</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia</th></tr></thead><tbody>
     ${porSuc.map(o => compRow(o, `<button class="catbtn" data-vsuc="${o.x}" title="Ver el detalle por día">${esc(name(o.x))}</button>`, o.x)).join('')}
     <tr class="foot"><td>Las 3 juntas</td><td class="r num">${money(tot.ef)}</td><td class="r num">${money(tot.sal)}</td><td class="r num">${money(tot.net)}</td><td class="r num">${money(tot.dep)}</td><td class="r num">${difTxt(tot.dif)}</td></tr></tbody></table></div></div>`;
   v.innerHTML = `${comp}
-    <p class="explain"><strong>Cómo se calcula:</strong> efectivo y cheques que entraron − gastos y fondos pagados en efectivo = <strong>lo que debió depositarse</strong> (columna "Efectivo − gastos"). Luego se compara con lo depositado. Toca una sucursal para ver su detalle día por día.</p>
+    <p class="explain"><strong>Cómo se calcula:</strong> efectivo que entró − gastos y fondos pagados en efectivo = <strong>lo que debió depositarse</strong> (columna "Efectivo − gastos"). Luego se compara con lo depositado. Toca una sucursal para ver su detalle día por día.</p>
+    ${(() => { const dd = daily(S.mes, S.vsuc || ''), ks = Object.keys(dd), ci = ks.reduce((a, k) => a + dd[k].ch, 0), cd = ks.reduce((a, k) => a + dd[k].depCh, 0);
+      return ci || cd ? `<p class="explain"><strong>Cheques (fuera del cuadre):</strong> cobrados ${dl({ tipo: 'ingreso', metodo: ['cheque'] }, money(ci, true))} · depositados ${dl({ tipo: 'deposito', metodo: ['cheque'] }, money(cd, true))}. No se suman ni restan en el cuadre de efectivo.</p>` : ''; })()}
     <h2 style="font-size:18px;margin:4px 0 0">Detalle por día</h2>
     ${sucChips('Las 3 juntas')}
-    <div class="kpis">${kpi('Efectivo y cheques que entraron', T('efc'), { tipo: 'ingreso', metodo: ['efectivo', 'cheque'], ...sc })}${kpi('Gastos y fondos', T('gasEf') + T('fonEf'), { cash: true, tipos: ['gasto', 'fondo'], ...sc })}${kpi('Efectivo − gastos', esp)}${kpi('Depositado', T('dep'), { tipo: 'deposito', ...sc })}${kpi(dif < -1 ? 'Falta por depositar' : 'Diferencia', dif < -1 ? -dif : dif, null, true, signCls(dif))}</div>
+    <div class="kpis">${kpi('Efectivo que entró', T('ef'), { tipo: 'ingreso', metodo: ['efectivo'], ...sc })}${kpi('Gastos y fondos', T('gasEf') + T('fonEf'), { cash: true, tipos: ['gasto', 'fondo'], ...sc })}${kpi('Efectivo − gastos', esp)}${kpi('Depositado', T('depEf'), { tipo: 'deposito', metodo: ['efectivo'], ...sc })}${kpi(dif < -1 ? 'Falta por depositar' : 'Diferencia', dif < -1 ? -dif : dif, null, true, signCls(dif))}</div>
     <div class="panel"><div class="panel-head"><h2>Cuadre diario${S.vsuc ? ' · ' + esc(name(S.vsuc)) : ' · las 3 juntas'}</h2><span class="hint">${whereTxt()}</span></div>
-    ${rows.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Efectivo y cheques que entraron</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia del día</th></tr></thead><tbody>
+    ${rows.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Efectivo que entró</th><th class="r">Gastos y fondos</th><th class="r">Efectivo − gastos</th><th class="r">Depositado</th><th class="r">Diferencia del día</th></tr></thead><tbody>
       ${rows.map(({ k, x, esp, dif, acc }) => `<tr><td>${dl({ dia: k, ...sc }, dayName(k))}</td>
-        <td class="r num">${cellM({ dia: k, tipo: 'ingreso', metodo: ['efectivo', 'cheque'], ...sc }, x.efc)}</td>
+        <td class="r num">${cellM({ dia: k, tipo: 'ingreso', metodo: ['efectivo'], ...sc }, x.ef)}</td>
         <td class="r num">${cellM({ dia: k, cash: true, tipos: ['gasto', 'fondo'], ...sc }, x.gasEf + x.fonEf)}</td>
         <td class="r num"><strong>${money(esp)}</strong></td>
-        <td class="r num">${cellM({ dia: k, tipo: 'deposito', ...sc }, x.dep)}</td>
+        <td class="r num">${cellM({ dia: k, tipo: 'deposito', ...sc }, x.depEf)}</td>
         <td class="r num ${signCls(dif)}"><strong>${Math.abs(dif) < 1 ? '<span class="hint">Cuadra</span>' : sgn(dif)}</strong></td></tr>`).join('')}
-      <tr class="foot"><td>Total acumulado</td><td class="r num">${money(T('efc'))}</td><td class="r num">${money(T('gasEf') + T('fonEf'))}</td><td class="r num">${money(esp)}</td><td class="r num">${money(T('dep'))}</td><td class="r num ${signCls(dif)}">${sgn(dif)}</td></tr></tbody></table></div>
+      <tr class="foot"><td>Total acumulado</td><td class="r num">${money(T('ef'))}</td><td class="r num">${money(T('gasEf') + T('fonEf'))}</td><td class="r num">${money(esp)}</td><td class="r num">${money(T('depEf'))}</td><td class="r num ${signCls(dif)}">${sgn(dif)}</td></tr></tbody></table></div>
       <p class="hint" style="margin:8px 0 0"><span class="neg">Negativo = falta depositar</span> · <span class="pos">positivo = se depositó de más</span></p>`
       : `<p class="hint">No hay movimientos de efectivo en ${whereTxt()}.</p>`}</div>
     <div class="panel"><div class="panel-head"><h2>Depósitos por cuenta</h2><a class="hint" href="#ajustes">Administrar cuentas</a></div>${depTable(S.mes)}</div>`;

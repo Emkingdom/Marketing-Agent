@@ -272,6 +272,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
       <a href="#ingresos" data-tab="ingresos">Ingresos</a>
       <a href="#gastos" data-tab="gastos">Gastos</a>
       <a href="#fondos" data-tab="fondos">Fondos</a>
+      <a href="#vehiculos" data-tab="vehiculos">Vehículos</a>
       <a href="#caja" data-tab="caja">Caja y depósitos</a>
       <a href="#movimientos" data-tab="movimientos">Movimientos</a>
       <a href="#suplidores" data-tab="suplidores">Suplidores</a>
@@ -306,6 +307,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
           <label class="f"><span id="l-prov">Proveedor</span><input type="text" id="g-prov" maxlength="80" placeholder="Opcional"></label>
           <label class="f"><span id="l-met">Forma de pago</span><select id="g-met"></select></label>
           <label class="f full">Comentario<input type="text" id="g-nota" maxlength="200" placeholder="Opcional: cualquier nota sobre este movimiento"></label>
+          <label class="f full" id="g-veh-wrap">Vehículo<select id="g-veh"><option value="">Ninguno</option></select></label>
           <label class="check full"><input type="checkbox" id="g-comp"> <span id="l-comp">Tengo comprobante o factura</span></label>
           <p class="err full" id="g-err" role="alert"></p>
           <div class="btns full">
@@ -371,6 +373,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
   <section class="view" id="v-ingresos" hidden data-live></section>
   <section class="view" id="v-gastos" hidden data-live></section>
   <section class="view" id="v-fondos" hidden data-live></section>
+  <section class="view" id="v-vehiculos" hidden data-live></section>
   <section class="view" id="v-caja" hidden data-live></section>
   <section class="view" id="v-oblig" hidden data-live></section>
   <section class="view" id="v-presupuestos" hidden data-live></section>
@@ -419,6 +422,14 @@ const FCATS = [
   { id: 'fondos', n: 'Otros ahorros' },
 ];
 const FCAT = Object.fromEntries(FCATS.map(c => [c.id, c]));
+const VEHS = [{ id: 'camion', n: 'Camión' }, { id: 'guaguita', n: 'Guaguita' }, { id: 'camion_vt', n: 'Camión Villa Tapia' }];
+const VEH = Object.fromEntries(VEHS.map(v => [v.id, v]));
+const normTxt = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const vehGuess = g => { const t = normTxt((g.desc || '') + ' ' + (g.nota || '')); return /camion\s*(de\s*)?villa\s*tapia/.test(t) ? 'camion_vt' : /guagu/.test(t) ? 'guaguita' : /camion/.test(t) ? 'camion' : ''; };
+const vehKind = g => g.cat === 'mantenimiento' ? 'mant' : /gasoil|gas oil|gasolin|combust|diesel/.test(normTxt((g.desc || '') + ' ' + (g.nota || ''))) ? 'comb' : 'otro';
+const VK = { comb: 'Combustible', mant: 'Mantenimiento y reparaciones', otro: 'Peajes y otros' };
+const hasVeh = g => tipoOf(g) === 'gasto' && !!VEH[g.veh];
+const vehCand = g => tipoOf(g) === 'gasto' && !VEH[g.veh] && /peaje|gasoil|gas oil|gasolin|combust|diesel|goma|neumat|aceite|repuest|mecanic|lavar|lavado|llave|freno|bateria|^mantenimiento$/.test(normTxt((g.desc || '') + ' ' + (g.nota || '')).trim());
 const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
 const ICATS = [
   { id: 'ventas', n: 'Ventas y cobros del día' },
@@ -617,13 +628,14 @@ function render() {
   pending = false;
   $('#mesLbl').textContent = mLabel(S.mes);
   document.querySelectorAll('nav.tabs a').forEach(x => { if (x.dataset.tab === S.tab) x.setAttribute('aria-current', 'page'); else x.removeAttribute('aria-current'); });
-  for (const t of ['resumen', 'ingresos', 'gastos', 'fondos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
+  for (const t of ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
   renderBanner(); fillSelects();
   if (S.tab === 'resumen') renderResumen();
   if (S.tab === 'movimientos') renderList();
   if (S.tab === 'ingresos') renderIngresos();
   if (S.tab === 'gastos') renderGastos();
   if (S.tab === 'fondos') renderFondos();
+  if (S.tab === 'vehiculos') renderVehiculos();
   if (S.tab === 'caja') renderCaja();
   if (S.tab === 'suplidores') renderCxp();
   if (S.tab === 'oblig') renderOblig();
@@ -666,7 +678,7 @@ function applyTipo(tp, keepValues) {
   gp.placeholder = tp === 'deposito' ? 'Elige o escribe la cuenta' : 'Opcional';
   $('#l-desc').textContent = L.desc; $('#g-desc').placeholder = L.descPh; $('#l-prov').textContent = L.prov; $('#l-met').textContent = L.met; $('#l-comp').textContent = L.comp;
   if (!S.editId) $('#g-save').textContent = L.save;
-  $('#g-cat-wrap').hidden = tp === 'deposito';
+  $('#g-cat-wrap').hidden = tp === 'deposito'; $('#g-veh-wrap').hidden = tp !== 'gasto';
   const gc = $('#g-cat'), cv = gc.value; gc.innerHTML = tp === 'deposito' ? '<option value="deposito">Depósito</option>' : optCats(tp);
   if (keepValues && [...gc.options].some(o => o.value === cv)) gc.value = cv;
   const gm = $('#g-met'), mv = gm.value; gm.innerHTML = Object.entries(METODOS[tp]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
@@ -735,6 +747,10 @@ function matchSpec(g, sp, suc, q) {
   if (suc && !(g.suc === suc || g.suc === 'all')) return false;
   if (q && !((g.desc || '').toLowerCase().includes(q) || (g.prov || '').toLowerCase().includes(q) || (g.nota || '').toLowerCase().includes(q))) return false;
   if (sp.dia && g.fecha !== sp.dia) return false;
+  if (sp.veh && !(hasVeh(g) && g.veh === sp.veh)) return false;
+  if (sp.anyVeh && !hasVeh(g)) return false;
+  if (sp.vk && vehKind(g) !== sp.vk) return false;
+  if (sp.sinVeh && !vehCand(g)) return false;
   return true;
 }
 function specTitle(sp) {
@@ -747,6 +763,9 @@ function specTitle(sp) {
   if (sp.sinComp) t = 'Gastos sin comprobante';
   if (sp.sinMonto) t = 'Movimientos sin monto';
   if (sp.dia) t = (sp.tipo ? T[sp.tipo] : 'Movimientos') + ' del ' + fmtDate(sp.dia);
+  if (sp.anyVeh) t = 'Gastos de los vehículos';
+  if (sp.veh) t = (VEH[sp.veh]?.n || 'Vehículo') + (sp.vk ? ' · ' + VK[sp.vk] : '') + (sp.dia ? ' · ' + fmtDate(sp.dia) : '');
+  if (sp.sinVeh) t = 'Transporte y mantenimiento sin vehículo';
   return sp.title || t;
 }
 function openSheet(sp) {
@@ -777,7 +796,7 @@ function renderSheet(force) {
     (list.length ? `<div class="ditems">${list.map(g => S.sheetEdit === g.id ? editor(g, fs) : srow(g, fs)).join('')}</div>` : '<div class="empty"><p>No hay movimientos con este filtro.</p></div>');
 }
 function srow(g, fs) {
-  const tp = tipoOf(g), sub = [catName(g), g.prov, METODOS[tp][g.metodo]].filter(Boolean).join(' · ');
+  const tp = tipoOf(g), sub = [catName(g), hasVeh(g) && VEH[g.veh].n, g.prov, METODOS[tp][g.metodo]].filter(Boolean).join(' · ');
   return `<div class="srow" data-item="${g.id}">
     <span class="dd num">${esc((g.fecha || '').slice(8, 10))} ${mLabel((g.fecha || S.mes).slice(0, 7), true)}</span>
     <span style="min-width:0"><span class="desc">${esc(g.desc || catName(g))}</span><span class="cell-b">${esc(sub)}${g.suc === 'all' ? ' · Las 3' + (fs ? ' (le toca ' + money(g.monto / 3, true) + ')' : '') : ' · ' + esc(name(g.suc))}</span>${g.nota ? `<span class="cell-b nota">“${esc(g.nota)}”</span>` : ''}</span>
@@ -799,6 +818,7 @@ function editor(g, fs) {
     <select id="d-met-${id}" aria-label="${L.met}">${mets}</select>
     ${tp === 'deposito' ? '<span></span>' : `<input id="d-prov-${id}" value="${esc(g.prov)}" list="${tp === 'gasto' ? 'supList' : ''}" maxlength="80" placeholder="${L.prov}" aria-label="${L.prov}">`}
     <label class="ck"><input type="checkbox" id="d-comp-${id}"${g.comp ? ' checked' : ''}> Comprobante</label>
+    ${tp === 'gasto' ? `<select class="full-row" id="d-veh-${id}" aria-label="Vehículo"><option value="">Sin vehículo</option>${VEHS.map(x => `<option value="${x.id}"${g.veh === x.id ? ' selected' : ''}>Vehículo: ${esc(x.n)}</option>`).join('')}</select>` : ''}
     <input class="full-row" id="d-nota-${id}" value="${esc(g.nota)}" maxlength="200" placeholder="Comentario" aria-label="Comentario">
     <div class="acts"><span class="hint"><span class="kind ${tp}">${TIPO_N[tp]}</span>${g.suc === 'all' && fs ? 'A esta sucursal le toca ' + money(g.monto / 3, true) : ''}${g.cxp ? ' Pago de factura de suplidor' : ''}</span>
       ${S.dConfirm === id ? `<button class="lnk danger" data-ddel-yes="${id}">Sí, eliminar</button><button class="lnk" data-ddel-no>No</button>`
@@ -812,13 +832,14 @@ async function saveDrill(id) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { toast('Elige una fecha válida.'); return; }
   const ng = { ...g, fecha, monto, desc: v('desc').value.trim(), suc: v('suc').value, metodo: v('met').value, prov: (v('prov')?.value || '').trim(), comp: v('comp').checked, nota: v('nota').value.trim(),
     cat: tp === 'deposito' ? 'deposito' : v('cat').value, ts: new Date().toISOString() };
+  if (v('veh')) ng.veh = v('veh').value;
   const m2 = fecha.slice(0, 7);
   try {
     if (m2 !== S.mes) { await patchMonth(m2, { items: { [id]: ng } }); await patchMonth(S.mes, { items: { [id]: null } }); }
     else await patchMonth(S.mes, { items: { [id]: ng } });
     if (g.cxp && S.cxp[g.cxp]) await patchCxp(g.cxp, { pagos: { [id]: { fecha, monto, metodo: ng.metodo, mes: m2 } } }).catch(() => {});
     delete S.dirty[id]; S.sheetEdit = null;
-    toast(m2 !== S.mes ? `Movido a ${mLabel(m2)}` : ng.cat !== g.cat ? `Movido a ${catName(ng)}` : 'Cambios guardados');
+    toast(m2 !== S.mes ? `Movido a ${mLabel(m2)}` : ng.cat !== g.cat ? `Movido a ${catName(ng)}` : (ng.veh || '') !== (g.veh || '') ? (VEH[ng.veh] ? `Asignado a ${VEH[ng.veh].n}` : 'Quitado del vehículo') : 'Cambios guardados');
     render(); renderSheet(true);
   } catch (x) { toast(errMsg(x)); }
 }
@@ -1154,6 +1175,30 @@ function renderFondos() {
       <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay fondos registrados en ${whereTxt()}. Regístralos en Movimientos → Fondo.</p>`}</div>`;
 }
 
+function renderVehiculos() {
+  const v = $('#v-vehiculos'), sc = vsc(), gs = items(S.mes).filter(g => tipoOf(g) === 'gasto' && (!S.vsuc || g.suc === S.vsuc || g.suc === 'all'));
+  const sh = g => g.suc === 'all' && S.vsuc ? g.monto / 3 : g.monto;
+  const vi = gs.filter(hasVeh), T = vi.reduce((a, g) => a + sh(g), 0);
+  const R = Object.fromEntries(VEHS.map(x => [x.id, { comb: 0, mant: 0, otro: 0, t: 0, n: 0 }]));
+  for (const g of vi) { const r = R[g.veh], k = vehKind(g); r[k] += sh(g); r.t += sh(g); if (k === 'comb') r.n++; }
+  const tk = k => VEHS.reduce((a, x) => a + R[x.id][k], 0);
+  const days = [...new Set(vi.map(g => g.fecha))].sort();
+  const byDay = (d, id) => vi.filter(g => g.fecha === d && (!id || g.veh === id)).reduce((a, g) => a + sh(g), 0);
+  const sinV = gs.filter(vehCand), sinT = sinV.reduce((a, g) => a + sh(g), 0);
+  v.innerHTML = `${sucChips()}
+    <div class="kpis">${kpi('Total de los vehículos', T, { tipo: 'gasto', anyVeh: true, ...sc }, true)}${VEHS.map(x => kpi(esc(x.n), R[x.id].t, { tipo: 'gasto', veh: x.id, ...sc })).join('')}</div>
+    <p class="explain">Aquí ves lo que consume cada vehículo. <strong>No es un gasto aparte:</strong> son los mismos gastos de la pestaña Gastos, agrupados por vehículo. Al registrar un gasto que diga "camión", "guaguita" o "camión Villa Tapia", el vehículo se elige solo; también puedes cambiarlo al editar.</p>
+    ${sinV.length ? `<div class="banner"><p><strong>${sinV.length} ${sinV.length === 1 ? 'gasto' : 'gastos'} de transporte o mantenimiento sin vehículo</strong> (${money(sinT)}), por ejemplo los peajes. Ábrelos y elige a qué vehículo pertenece cada uno.</p>${dl({ tipo: 'gasto', sinVeh: true, ...sc }, 'Ver y asignar', 'lnk go')}</div>` : ''}
+    <div class="panel"><div class="panel-head"><h2>Gasto por vehículo</h2><span class="hint">${whereTxt()}</span></div>
+      <div class="scroll"><table><thead><tr><th>Vehículo</th>${Object.values(VK).map(n => `<th class="r">${n}</th>`).join('')}<th class="r">Total</th><th class="r">Veces que echó combustible</th><th class="r">Promedio por vez</th></tr></thead><tbody>
+      ${VEHS.map(x => { const r = R[x.id]; return `<tr><td><strong>${dl({ tipo: 'gasto', veh: x.id, ...sc }, esc(x.n))}</strong></td>${Object.keys(VK).map(k => `<td class="r num">${cellM({ tipo: 'gasto', veh: x.id, vk: k, ...sc }, r[k])}</td>`).join('')}<td class="r num"><strong>${cellM({ tipo: 'gasto', veh: x.id, ...sc }, r.t)}</strong></td><td class="r num">${r.n || '<span class="hint">—</span>'}</td><td class="r num">${r.n ? money(r.comb / r.n) : '<span class="hint">—</span>'}</td></tr>`; }).join('')}
+      <tr class="foot"><td>Total</td>${Object.keys(VK).map(k => `<td class="r num">${money(tk(k))}</td>`).join('')}<td class="r num">${money(T)}</td><td class="r num">${tk('n') || ''}</td><td></td></tr></tbody></table></div></div>
+    <div class="panel"><div class="panel-head"><h2>Consumo por día</h2><span class="hint">${whereTxt()} · solo los días con gastos de vehículos</span></div>
+      ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th>${VEHS.map(x => `<th class="r">${esc(x.n)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
+        ${days.map(d => `<tr><td>${esc(dayName(d))}</td>${VEHS.map(x => `<td class="r num">${cellM({ tipo: 'gasto', veh: x.id, dia: d, ...sc }, byDay(d, x.id))}</td>`).join('')}<td class="r num"><strong>${money(byDay(d))}</strong></td></tr>`).join('')}
+        <tr class="foot"><td>Total</td>${VEHS.map(x => `<td class="r num">${money(R[x.id].t)}</td>`).join('')}<td class="r num">${money(T)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos de vehículos en ${whereTxt()}.</p>`}</div>`;
+}
+
 function renderCaja() {
   const v = $('#v-caja'), d = daily(S.mes, S.vsuc), sc = vsc();
   const days = Object.keys(d).sort();
@@ -1350,7 +1395,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = fals
 function resetForm() {
   S.editId = null; S.editMes = null; S.editCxp = null;
   $('#gFormTitle').textContent = 'Registrar movimiento'; $('#g-cancel').hidden = true;
-  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-nota').value = ''; $('#g-comp').checked = false; $('#g-err').textContent = '';
+  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-nota').value = ''; $('#g-veh').value = ''; S.vehTouched = false; $('#g-comp').checked = false; $('#g-err').textContent = '';
   const t = todayISO(); $('#g-fecha').value = t.slice(0, 7) === S.mes ? t : S.mes + '-01';
   applyTipo(S.tipo, true);
 }
@@ -1362,6 +1407,7 @@ $('#gForm').addEventListener('submit', async e => {
   const tp = S.tipo;
   const g = { id: S.editId || uid(), tipo: tp, fecha, monto, suc: $('#g-suc').value, cat: tp === 'deposito' ? 'deposito' : $('#g-cat').value,
     desc: $('#g-desc').value.trim(), prov: $('#g-prov').value.trim(), metodo: $('#g-met').value, comp: $('#g-comp').checked, nota: $('#g-nota').value.trim(), ts: new Date().toISOString() };
+  if (tp === 'gasto' && VEH[$('#g-veh').value]) g.veh = $('#g-veh').value;
   const linked = S.editCxp; if (linked) g.cxp = linked;
   const m = fecha.slice(0, 7), btn = $('#g-save'); btn.disabled = true; err.textContent = '';
   try {
@@ -1375,6 +1421,9 @@ $('#gForm').addEventListener('submit', async e => {
   finally { btn.disabled = false; }
 });
 $('#g-cancel').addEventListener('click', () => { resetForm(); render(); });
+$('#g-veh').innerHTML = '<option value="">Ninguno</option>' + VEHS.map(x => `<option value="${x.id}">${esc(x.n)}</option>`).join('');
+$('#g-veh').addEventListener('change', () => { S.vehTouched = true; });
+['#g-desc', '#g-nota'].forEach(s => $(s).addEventListener('input', () => { if (!S.vehTouched) $('#g-veh').value = vehGuess({ desc: $('#g-desc').value, nota: $('#g-nota').value }); }));
 ['#f-tipo', '#f-suc', '#f-cat', '#f-q', '#f-desde', '#f-hasta'].forEach(s => $(s).addEventListener('input', renderList));
 
 document.addEventListener('click', async e => {
@@ -1388,7 +1437,7 @@ document.addEventListener('click', async e => {
     applyTipo(tipoOf(g), false);
     $('#g-fecha').value = g.fecha; $('#g-monto').value = g.monto; $('#g-suc').value = g.suc;
     if (tipoOf(g) !== 'deposito') $('#g-cat').value = g.cat;
-    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-nota').value = g.nota || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp;
+    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-nota').value = g.nota || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp; $('#g-veh').value = VEH[g.veh] ? g.veh : ''; S.vehTouched = true;
     $('#gFormTitle').textContent = 'Editar ' + TIPO_N[tipoOf(g)].toLowerCase(); $('#g-save').textContent = 'Guardar cambios'; $('#g-cancel').hidden = false; $('#g-err').textContent = '';
     renderList(); $('#gForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#g-monto').focus({ preventScroll: true }); return;
   }
@@ -1488,7 +1537,7 @@ function setMes(m) { S.mes = m; S.confirmDel = null; S.openCat = null; if (S.she
 $('#prevM').addEventListener('click', () => setMes(addM(S.mes, -1)));
 $('#nextM').addEventListener('click', () => setMes(addM(S.mes, 1)));
 function route() { let h = location.hash.slice(1); if (h === 'porpagar') h = 'suplidores'; if (h === 'fechas') h = 'resumen';
-  S.tab = ['resumen', 'ingresos', 'gastos', 'fondos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
+  S.tab = ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
 window.addEventListener('hashchange', route);
 
 function subscribe() {

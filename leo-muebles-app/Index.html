@@ -568,9 +568,9 @@ function alerts(m) {
   const nd = (S.cfg.notasDep || []).filter(x => (x.fecha || '').slice(0, 7) === m).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   if (nd.length) {
     const tot = nd.reduce((a, x) => a + (Number(x.monto) || 0), 0);
-    out.push({ l: 'warn', tag: 'Depósitos en hoja', html: `<details class="nd"><summary>En la hoja de gastos aparecen <strong>${nd.length} partidas de depósito</strong> ("Depositado" y "Recibo Manual") por <strong>${money(tot)}</strong>. Solo como aviso: no se suman a nada. <span class="lnk">Ver detalle</span></summary>
+    out.push({ l: 'warn', tag: 'No son gasto', html: `<details class="nd"><summary>En la hoja de gastos aparecen <strong>${nd.length} partidas que no son gasto</strong> (${[...new Set(nd.map(x => '"' + (/^depositado/i.test(x.desc || '') ? 'Depositado' : (x.desc || 'Depositado')) + '"'))].join(', ').replace(/, ([^,]*)$/, ' y $1')}) por <strong>${money(tot)}</strong>. Solo como aviso: no se suman a nada. <span class="lnk">Ver detalle</span></summary>
       <table><thead><tr><th>Fecha en que entró</th><th>Sucursal</th><th>Como aparece</th><th class="r">Monto</th></tr></thead><tbody>
-      ${nd.map(x => `<tr><td class="num">${fmtDate(x.fecha)}</td><td>${esc(name(x.suc))}</td><td>${esc(x.desc || 'Depositado')}</td><td class="r num">${money(x.monto, true)}</td></tr>`).join('')}
+      ${nd.map(x => `<tr><td class="num">${fmtDate(x.fecha)}</td><td>${esc(name(x.suc))}</td><td>${esc(x.desc || 'Depositado')}${x.nota ? `<span class="cell-b nota">“${esc(x.nota)}”</span>` : ''}</td><td class="r num">${money(x.monto, true)}</td></tr>`).join('')}
       <tr class="foot"><td colspan="3">Total</td><td class="r num">${money(tot, true)}</td></tr></tbody></table></details>` });
   }
   const sinMonto = items(m).filter(g => !g.monto).length;
@@ -1416,13 +1416,13 @@ document.addEventListener('click', async e => {
   if (t.id === 'bkDown') { if (!S.db?.exportAll) return; const d = S.db.exportAll(); await S.dl.save({ filename: `copia-leo-muebles-${todayISO()}.json`, data: JSON.stringify(d) }); return; }
   if (t.id === 'bkSync') { try { await S.db.refresh(); toast('Datos actualizados desde la hoja'); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'bkNo') { $('#bkFile').value = ''; $('#bkConfirm').hidden = true; $('#bkInfo').hidden = true; S.bkData = null; return; }
-  if (t.id === 'bkAdd') { const d = S.bkData; if (!d) return; let n = 0;
-    try { for (const [m, doc] of Object.entries(d.months || {})) { const its = Object.fromEntries(Object.entries(doc.items || {}).filter(([, g]) => g)); n += Object.keys(its).length;
-        const ref = S.db.doc('meses/' + m); const sn = await ref.get(); if (sn.exists) await ref.update({ items: its }); else await ref.set({ items: its }); }
+  if (t.id === 'bkAdd') { const d = S.bkData; if (!d) return; let n = 0, nd = 0;
+    try { for (const [m, doc] of Object.entries(d.months || {})) { const its = Object.fromEntries(Object.entries(doc.items || {}).filter(([, g]) => g !== undefined)); n += Object.values(its).filter(Boolean).length; nd += Object.values(its).filter(g => g === null).length;
+        const ref = S.db.doc('meses/' + m); const sn = await ref.get(); if (sn.exists) await ref.update({ items: its }); else await ref.set({ items: Object.fromEntries(Object.entries(its).filter(([, g]) => g)) }); }
       for (const [id, f] of Object.entries(d.cxp || {})) await S.db.doc('cxp/' + id).set(f);
       if (d.cfg && (d.cfg.notasDep || d.cfg.oblig)) await saveCfg({ ...S.cfg, ...(d.cfg.notasDep ? { notasDep: d.cfg.notasDep } : {}), ...(d.cfg.oblig ? { oblig: d.cfg.oblig } : {}) });
       S.bkData = null; $('#bkConfirm').hidden = true; $('#bkInfo').hidden = true; $('#bkFile').value = '';
-      toast(`Se agregaron ${n} movimientos`); render(); } catch (x) { toast(errMsg(x)); } return; }
+      toast(`Se agregaron ${n} movimientos` + (nd ? ` y se quitaron ${nd}` : '')); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'bkYes') { try { await S.db.importAll(S.bkData); S.bkData = null; toast('Copia restaurada'); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'ctaAdd') { const v = $('#a-cta').value.trim(); if (!v) { toast('Escribe el nombre de la cuenta.'); return; }
     const list = [...(S.cfg.cuentas || [])]; if (!list.includes(v)) list.push(v);

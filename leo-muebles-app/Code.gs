@@ -7,7 +7,7 @@
  * No borres ni cambies el orden de las columnas de esas pestañas.
  */
 
-const MOV_COLS = ['id', 'tipo', 'fecha', 'mes', 'monto', 'suc', 'cat', 'desc', 'prov', 'metodo', 'comp', 'cxp', 'ts', 'nota', 'veh'];
+const MOV_COLS = ['id', 'tipo', 'fecha', 'mes', 'monto', 'suc', 'cat', 'desc', 'prov', 'metodo', 'comp', 'cxp', 'ts', 'nota', 'veh', 'emp'];
 const FAC_COLS = ['id', 'suplidor', 'num', 'monto', 'fecha', 'vence', 'plazo', 'aviso', 'suc', 'cat', 'nota', 'pagos', 'ts'];
 
 function doGet() {

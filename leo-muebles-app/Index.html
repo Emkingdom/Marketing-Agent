@@ -273,6 +273,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
       <a href="#gastos" data-tab="gastos">Gastos</a>
       <a href="#fondos" data-tab="fondos">Fondos</a>
       <a href="#vehiculos" data-tab="vehiculos">Vehículos</a>
+      <a href="#nomina" data-tab="nomina">Nómina</a>
       <a href="#caja" data-tab="caja">Caja y depósitos</a>
       <a href="#movimientos" data-tab="movimientos">Movimientos</a>
       <a href="#suplidores" data-tab="suplidores">Suplidores</a>
@@ -307,6 +308,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
           <label class="f"><span id="l-prov">Proveedor</span><input type="text" id="g-prov" maxlength="80" placeholder="Opcional"></label>
           <label class="f"><span id="l-met">Forma de pago</span><select id="g-met"></select></label>
           <label class="f full">Comentario<input type="text" id="g-nota" maxlength="200" placeholder="Opcional: cualquier nota sobre este movimiento"></label>
+          <label class="f full" id="g-emp-wrap">Empleado<select id="g-emp"><option value="">Ninguno</option></select></label>
           <label class="f full" id="g-veh-wrap">Vehículo<select id="g-veh"><option value="">Ninguno</option></select></label>
           <label class="check full"><input type="checkbox" id="g-comp"> <span id="l-comp">Tengo comprobante o factura</span></label>
           <p class="err full" id="g-err" role="alert"></p>
@@ -374,6 +376,7 @@ tr.obl-sub td { background: var(--hover); font-weight: 700; }
   <section class="view" id="v-gastos" hidden data-live></section>
   <section class="view" id="v-fondos" hidden data-live></section>
   <section class="view" id="v-vehiculos" hidden data-live></section>
+  <section class="view" id="v-nomina" hidden data-live></section>
   <section class="view" id="v-caja" hidden data-live></section>
   <section class="view" id="v-oblig" hidden data-live></section>
   <section class="view" id="v-presupuestos" hidden data-live></section>
@@ -428,6 +431,17 @@ const normTxt = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u
 const vehGuess = g => { const t = normTxt((g.desc || '') + ' ' + (g.nota || '')); return /camion\s*(de\s*)?villa\s*tapia/.test(t) ? 'camion_vt' : /guagu/.test(t) ? 'guaguita' : /camion/.test(t) ? 'camion' : ''; };
 const vehKind = g => g.cat === 'mantenimiento' ? 'mant' : /gasoil|gas oil|gasolin|combust|diesel/.test(normTxt((g.desc || '') + ' ' + (g.nota || ''))) ? 'comb' : 'otro';
 const VK = { comb: 'Combustible', mant: 'Mantenimiento y reparaciones', otro: 'Peajes y otros' };
+const NOM = () => S.cfg.nomina || { empleados: [], quincenas: [] };
+const empById = id => id ? NOM().empleados.find(e => e.id === id) : null;
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const empGuess = g => { const d = normTxt(g.desc).trim(), t = normTxt((g.desc || '') + ' ' + (g.nota || ''));
+  if (/^(nomina|fondo para nomina)/.test(d) && !/domingo/.test(t)) return '';
+  for (const e of NOM().empleados) for (const a of (e.alias || [])) if (a && new RegExp('(^|[^a-z])' + reEsc(normTxt(a)) + '($|[^a-z])').test(t)) return e.id;
+  return ''; };
+const EK = { sueldo: 'Sueldo, dietas y pagos', domingo: 'Pagos de domingo', comida: 'Comida', prestamo: 'Préstamos y avances', vacaciones: 'Vacaciones', otros: 'Otros' };
+const empKind = g => { const t = normTxt((g.desc || '') + ' ' + (g.nota || ''));
+  return /domingo/.test(t) ? 'domingo' : /vacacion/.test(t) ? 'vacaciones' : /prestamo|avance|descuento/.test(t) ? 'prestamo' : (g.cat === 'comida' || /comida/.test(t)) ? 'comida' : /sueldo|nomina|pago|dieta/.test(t) ? 'sueldo' : 'otros'; };
+const hasEmp = g => tipoOf(g) === 'gasto' && !!empById(g.emp);
 const hasVeh = g => tipoOf(g) === 'gasto' && !!VEH[g.veh];
 const vehCand = g => tipoOf(g) === 'gasto' && !VEH[g.veh] && /peaje|gasoil|gas oil|gasolin|combust|diesel|goma|neumat|aceite|repuest|mecanic|lavar|lavado|llave|freno|bateria|^mantenimiento$/.test(normTxt((g.desc || '') + ' ' + (g.nota || '')).trim());
 const GRUPOS = { fijo: 'Gastos fijos', variable: 'Gastos variables', personal: 'Personal' };
@@ -628,7 +642,7 @@ function render() {
   pending = false;
   $('#mesLbl').textContent = mLabel(S.mes);
   document.querySelectorAll('nav.tabs a').forEach(x => { if (x.dataset.tab === S.tab) x.setAttribute('aria-current', 'page'); else x.removeAttribute('aria-current'); });
-  for (const t of ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
+  for (const t of ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'nomina', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes']) $('#v-' + t).hidden = t !== S.tab;
   renderBanner(); fillSelects();
   if (S.tab === 'resumen') renderResumen();
   if (S.tab === 'movimientos') renderList();
@@ -636,6 +650,7 @@ function render() {
   if (S.tab === 'gastos') renderGastos();
   if (S.tab === 'fondos') renderFondos();
   if (S.tab === 'vehiculos') renderVehiculos();
+  if (S.tab === 'nomina') renderNomina();
   if (S.tab === 'caja') renderCaja();
   if (S.tab === 'suplidores') renderCxp();
   if (S.tab === 'oblig') renderOblig();
@@ -678,7 +693,7 @@ function applyTipo(tp, keepValues) {
   gp.placeholder = tp === 'deposito' ? 'Elige o escribe la cuenta' : 'Opcional';
   $('#l-desc').textContent = L.desc; $('#g-desc').placeholder = L.descPh; $('#l-prov').textContent = L.prov; $('#l-met').textContent = L.met; $('#l-comp').textContent = L.comp;
   if (!S.editId) $('#g-save').textContent = L.save;
-  $('#g-cat-wrap').hidden = tp === 'deposito'; $('#g-veh-wrap').hidden = tp !== 'gasto';
+  $('#g-cat-wrap').hidden = tp === 'deposito'; $('#g-veh-wrap').hidden = tp !== 'gasto'; $('#g-emp-wrap').hidden = tp !== 'gasto';
   const gc = $('#g-cat'), cv = gc.value; gc.innerHTML = tp === 'deposito' ? '<option value="deposito">Depósito</option>' : optCats(tp);
   if (keepValues && [...gc.options].some(o => o.value === cv)) gc.value = cv;
   const gm = $('#g-met'), mv = gm.value; gm.innerHTML = Object.entries(METODOS[tp]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
@@ -751,6 +766,10 @@ function matchSpec(g, sp, suc, q) {
   if (sp.anyVeh && !hasVeh(g)) return false;
   if (sp.vk && vehKind(g) !== sp.vk) return false;
   if (sp.sinVeh && !vehCand(g)) return false;
+  if (sp.emp && !(hasEmp(g) && g.emp === sp.emp)) return false;
+  if (sp.anyEmp && !hasEmp(g)) return false;
+  if (sp.ek && empKind(g) !== sp.ek) return false;
+  if (sp.sinEmp && !(tipoOf(g) === 'gasto' && g.cat === 'nomina' && !empById(g.emp))) return false;
   return true;
 }
 function specTitle(sp) {
@@ -766,6 +785,9 @@ function specTitle(sp) {
   if (sp.anyVeh) t = 'Gastos de los vehículos';
   if (sp.veh) t = (VEH[sp.veh]?.n || 'Vehículo') + (sp.vk ? ' · ' + VK[sp.vk] : '') + (sp.dia ? ' · ' + fmtDate(sp.dia) : '');
   if (sp.sinVeh) t = 'Transporte y mantenimiento sin vehículo';
+  if (sp.anyEmp) t = 'Pagos de caja a empleados' + (sp.ek ? ' · ' + EK[sp.ek] : '');
+  if (sp.emp) t = (empById(sp.emp)?.nombre || 'Empleado') + (sp.ek ? ' · ' + EK[sp.ek] : '');
+  if (sp.sinEmp) t = 'Nómina sin empleado asignado';
   return sp.title || t;
 }
 function openSheet(sp) {
@@ -796,7 +818,7 @@ function renderSheet(force) {
     (list.length ? `<div class="ditems">${list.map(g => S.sheetEdit === g.id ? editor(g, fs) : srow(g, fs)).join('')}</div>` : '<div class="empty"><p>No hay movimientos con este filtro.</p></div>');
 }
 function srow(g, fs) {
-  const tp = tipoOf(g), sub = [catName(g), hasVeh(g) && VEH[g.veh].n, g.prov, METODOS[tp][g.metodo]].filter(Boolean).join(' · ');
+  const tp = tipoOf(g), sub = [catName(g), hasVeh(g) && VEH[g.veh].n, hasEmp(g) && empById(g.emp).nombre, g.prov, METODOS[tp][g.metodo]].filter(Boolean).join(' · ');
   return `<div class="srow" data-item="${g.id}">
     <span class="dd num">${esc((g.fecha || '').slice(8, 10))} ${mLabel((g.fecha || S.mes).slice(0, 7), true)}</span>
     <span style="min-width:0"><span class="desc">${esc(g.desc || catName(g))}</span><span class="cell-b">${esc(sub)}${g.suc === 'all' ? ' · Las 3' + (fs ? ' (le toca ' + money(g.monto / 3, true) + ')' : '') : ' · ' + esc(name(g.suc))}</span>${g.nota ? `<span class="cell-b nota">“${esc(g.nota)}”</span>` : ''}</span>
@@ -818,6 +840,7 @@ function editor(g, fs) {
     <select id="d-met-${id}" aria-label="${L.met}">${mets}</select>
     ${tp === 'deposito' ? '<span></span>' : `<input id="d-prov-${id}" value="${esc(g.prov)}" list="${tp === 'gasto' ? 'supList' : ''}" maxlength="80" placeholder="${L.prov}" aria-label="${L.prov}">`}
     <label class="ck"><input type="checkbox" id="d-comp-${id}"${g.comp ? ' checked' : ''}> Comprobante</label>
+    ${tp === 'gasto' ? `<select class="full-row" id="d-emp-${id}" aria-label="Empleado"><option value="">Sin empleado</option>${NOM().empleados.map(x => `<option value="${x.id}"${g.emp === x.id ? ' selected' : ''}>Empleado: ${esc(x.nombre)}</option>`).join('')}</select>` : ''}
     ${tp === 'gasto' ? `<select class="full-row" id="d-veh-${id}" aria-label="Vehículo"><option value="">Sin vehículo</option>${VEHS.map(x => `<option value="${x.id}"${g.veh === x.id ? ' selected' : ''}>Vehículo: ${esc(x.n)}</option>`).join('')}</select>` : ''}
     <input class="full-row" id="d-nota-${id}" value="${esc(g.nota)}" maxlength="200" placeholder="Comentario" aria-label="Comentario">
     <div class="acts"><span class="hint"><span class="kind ${tp}">${TIPO_N[tp]}</span>${g.suc === 'all' && fs ? 'A esta sucursal le toca ' + money(g.monto / 3, true) : ''}${g.cxp ? ' Pago de factura de suplidor' : ''}</span>
@@ -833,13 +856,14 @@ async function saveDrill(id) {
   const ng = { ...g, fecha, monto, desc: v('desc').value.trim(), suc: v('suc').value, metodo: v('met').value, prov: (v('prov')?.value || '').trim(), comp: v('comp').checked, nota: v('nota').value.trim(),
     cat: tp === 'deposito' ? 'deposito' : v('cat').value, ts: new Date().toISOString() };
   if (v('veh')) ng.veh = v('veh').value;
+  if (v('emp')) ng.emp = v('emp').value;
   const m2 = fecha.slice(0, 7);
   try {
     if (m2 !== S.mes) { await patchMonth(m2, { items: { [id]: ng } }); await patchMonth(S.mes, { items: { [id]: null } }); }
     else await patchMonth(S.mes, { items: { [id]: ng } });
     if (g.cxp && S.cxp[g.cxp]) await patchCxp(g.cxp, { pagos: { [id]: { fecha, monto, metodo: ng.metodo, mes: m2 } } }).catch(() => {});
     delete S.dirty[id]; S.sheetEdit = null;
-    toast(m2 !== S.mes ? `Movido a ${mLabel(m2)}` : ng.cat !== g.cat ? `Movido a ${catName(ng)}` : (ng.veh || '') !== (g.veh || '') ? (VEH[ng.veh] ? `Asignado a ${VEH[ng.veh].n}` : 'Quitado del vehículo') : 'Cambios guardados');
+    toast(m2 !== S.mes ? `Movido a ${mLabel(m2)}` : ng.cat !== g.cat ? `Movido a ${catName(ng)}` : (ng.veh || '') !== (g.veh || '') ? (VEH[ng.veh] ? `Asignado a ${VEH[ng.veh].n}` : 'Quitado del vehículo') : (ng.emp || '') !== (g.emp || '') ? (empById(ng.emp) ? `Asignado a ${empById(ng.emp).nombre}` : 'Quitado del empleado') : 'Cambios guardados');
     render(); renderSheet(true);
   } catch (x) { toast(errMsg(x)); }
 }
@@ -1199,6 +1223,61 @@ function renderVehiculos() {
         <tr class="foot"><td>Total</td>${VEHS.map(x => `<td class="r num">${money(R[x.id].t)}</td>`).join('')}<td class="r num">${money(T)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos de vehículos en ${whereTxt()}.</p>`}</div>`;
 }
 
+function fillEmpSel() { const s = $('#g-emp'), v = s.value; s.innerHTML = '<option value="">Ninguno</option>' + NOM().empleados.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join(''); s.value = v; }
+const cedKey = c => String(c || '').replace(/\D/g, '');
+function renderNomina() {
+  const v = $('#v-nomina'), N = NOM(), m = S.mes, E = N.empleados;
+  const qs = (N.quincenas || []).filter(q => q.periodo === m);
+  const gs = items(m).filter(g => tipoOf(g) === 'gasto');
+  const byEmp = {}; for (const g of gs) { if (!hasEmp(g)) continue; const r = (byEmp[g.emp] ||= { t: 0 }), k = empKind(g); r[k] = (r[k] || 0) + g.monto; r.t += g.monto; }
+  const qByEmp = {}; for (const q of qs) for (const l of q.lineas) { const r = (qByEmp[l.emp] ||= { neto: 0, ganado: 0, desc: 0, n: [] }); r.neto += l.neto; r.ganado += l.ganado; r.desc += l.desc || 0; r.n.push({ q, l }); }
+  const qNeto = qs.reduce((a, q) => a + q.lineas.reduce((b, l) => b + l.neto, 0), 0);
+  const cajaT = Object.values(byEmp).reduce((a, r) => a + r.t, 0), sumK = k => Object.values(byEmp).reduce((a, r) => a + (r[k] || 0), 0);
+  const sinEmp = gs.filter(g => g.cat === 'nomina' && !empById(g.emp)), sinT = sinEmp.reduce((a, g) => a + g.monto, 0);
+  const aport = (S.cfg.oblig?.impuestos || []).filter(t => t.periodo === m && (t.tipo === 'tss' || t.tipo === 'infotep'));
+  const tssOf = e => { const k = cedKey(e.cedula); if (!k) return null; const o = {}; for (const t of aport) { const d = (t.detalle || []).find(x => cedKey(x.cedula) === k); if (d) o[t.tipo] = d; } return Object.keys(o).length ? o : null; };
+  const rows = E.map(e => { const c = byEmp[e.id] || {}, q = qByEmp[e.id] || { neto: 0 }; return { e, c, q, t: q.neto + (c.t || 0) }; }).filter(r => r.t || r.e.planilla !== 'Solo en TSS');
+  rows.sort((a, b) => b.t - a.t || a.e.nombre.localeCompare(b.e.nombre));
+  const sel = empById(S.empSel);
+  const cm = (sp, val) => cellM(sp, val);
+  let prof = '';
+  if (sel) {
+    const c = byEmp[sel.id] || {}, q = qByEmp[sel.id] || { neto: 0, n: [] }, ts = tssOf(sel), tot = q.neto + (c.t || 0);
+    prof = `<div class="panel" id="empProf"><div class="panel-head"><h2>${esc(sel.nombre)}</h2><button class="btn small" data-empsel="">Cerrar perfil</button></div>
+      <div class="kv" style="max-width:560px;margin-bottom:12px">${[['Planilla', sel.planilla], ['Cargo', sel.cargo], ['Cédula', sel.cedula], ['Fecha de entrada', sel.entrada], ['Sueldo mensual (nómina)', sel.salario ? money(sel.salario, true) : ''],
+        ['Lo identifico en tus hojas como', (sel.alias || []).join(', ')], ts?.tss && ['Salario reportado a la TSS', money(ts.tss.reportado ?? ts.tss.salario, true)], ts?.tss && ['Aporte TSS del mes (empresa + empleado)', money(ts.tss.total, true)], ts?.infotep && ['INFOTEP del mes', money(ts.infotep.monto, true)]]
+        .filter(x => x && x[1]).map(([a, b]) => `<span class="lbl">${esc(a)}</span><span class="num">${esc(b)}</span>`).join('')}</div>
+      <div class="kpis">${kpi('Total recibido en ' + mLabel(m), tot, null, true)}${kpi('Nómina (quincenas)', q.neto)}${Object.keys(EK).filter(k => c[k]).map(k => kpi(EK[k], c[k], { tipo: 'gasto', emp: sel.id, ek: k })).join('')}</div>
+      ${q.n.length ? `<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Quincena</th><th class="r">Salario ganado</th><th class="r">Descuentos</th><th class="r">Neto pagado</th></tr></thead><tbody>${q.n.map(({ q, l }) => `<tr><td>${esc(q.titulo)}</td><td class="r num">${money(l.ganado, true)}</td><td class="r num">${l.desc ? money(l.desc, true) + (l.descNota ? `<span class="cell-b">${esc(l.descNota)}</span>` : '') : '—'}</td><td class="r num"><strong>${money(l.neto, true)}</strong></td></tr>`).join('')}</tbody></table></div>` : ''}
+      <p style="margin:12px 0 0">${c.t ? dl({ tipo: 'gasto', emp: sel.id }, 'Ver y editar sus pagos de caja', 'lnk go') : '<span class="hint">No tiene pagos de caja registrados este mes.</span>'}${c.prestamo ? ` <span class="hint">· Préstamos y avances: ${money(c.prestamo)} (por descontarle)</span>` : ''}</p></div>`;
+  }
+  const quinc = qs.map(q => { const pl = [...new Set(q.lineas.map(l => l.planilla))];
+    const sumP = (p, f) => q.lineas.filter(l => l.planilla === p).reduce((a, l) => a + (l[f] || 0), 0);
+    const an = p => (q.anotaciones || []).find(a => a.planilla === p);
+    const bulk = gs.filter(g => g.cat === 'nomina' && /^(nomina|fondo para nomina)/.test(normTxt(g.desc).trim()) && g.fecha >= (q.desde || m + '-01') && g.fecha <= q.fecha);
+    const bt = bulk.reduce((a, g) => a + g.monto, 0), tn = q.lineas.reduce((a, l) => a + l.neto, 0), ta = (q.anotaciones || []).reduce((a, x) => a + (x.total - sumP(x.planilla, 'neto')), 0);
+    return `<div class="panel"><div class="panel-head"><h2>${esc(q.titulo)}</h2><span class="hint">${q.lineas.length} empleados · pagada al ${fmtDate(q.fecha)}</span></div>
+      <div class="scroll"><table><thead><tr><th>Planilla</th><th class="r">Empleados</th><th class="r">Salario ganado</th><th class="r">Descuentos</th><th class="r">Neto a pagar</th><th class="r">Total anotado a mano</th></tr></thead><tbody>
+      ${pl.map(p => `<tr><td><details class="nd"><summary><strong>${esc(p)}</strong> <span class="lnk">Ver empleados</span></summary><table><thead><tr><th>Empleado</th><th class="r">Sueldo</th><th class="r">Ganado</th><th class="r">Desc.</th><th class="r">Neto</th></tr></thead><tbody>
+        ${q.lineas.filter(l => l.planilla === p).map(l => { const e = empById(l.emp); return `<tr><td><button class="cellbtn" data-empsel="${esc(l.emp)}">${esc(e?.nombre || l.emp)}</button>${e?.cargo ? `<span class="cell-b">${esc(e.cargo)}</span>` : ''}</td><td class="r num">${e?.salario ? money(e.salario) : '—'}</td><td class="r num">${money(l.ganado)}</td><td class="r num">${l.desc ? money(l.desc) + (l.descNota ? `<span class="cell-b">${esc(l.descNota)}</span>` : '') : '—'}</td><td class="r num">${money(l.neto)}</td></tr>`; }).join('')}</tbody></table></details></td>
+        <td class="r num">${q.lineas.filter(l => l.planilla === p).length}</td><td class="r num">${money(sumP(p, 'ganado'))}</td><td class="r num">${sumP(p, 'desc') ? money(sumP(p, 'desc')) : '—'}</td><td class="r num"><strong>${money(sumP(p, 'neto'))}</strong></td><td class="r num">${an(p) ? money(an(p).total) + `<span class="cell-b">${esc(an(p).nota)}</span>` : '—'}</td></tr>`).join('')}
+      <tr class="foot"><td>Total</td><td class="r num">${q.lineas.length}</td><td class="r num">${money(q.lineas.reduce((a, l) => a + l.ganado, 0))}</td><td class="r num">${money(q.lineas.reduce((a, l) => a + (l.desc || 0), 0))}</td><td class="r num">${money(tn)}</td><td class="r num">${ta ? money(tn + ta) : ''}</td></tr></tbody></table></div>
+      <p class="explain" style="margin-top:12px">En caja (hojas de gastos) se registró como nómina del ${fmtDate(q.desde || m + '-01')} al ${fmtDate(q.fecha)}: <strong>${dl({ tipo: 'gasto', sinEmp: true }, money(bt))}</strong>. La nómina dice <strong>${money(tn)}</strong> neto${ta ? ` (${money(tn + ta)} con lo anotado a mano)` : ''}. Diferencia: <strong>${money(tn - bt)}</strong>${ta ? ` (o ${money(tn + ta - bt)})` : ''}. Si esa parte se pagó por transferencia o de otra caja, no aparece en las hojas.</p></div>`; }).join('');
+  v.innerHTML = `<div class="kpis">${kpi('Nómina del mes (neto)', qNeto, null, true)}${kpi('Pagos de caja a empleados', cajaT, { tipo: 'gasto', anyEmp: true })}${kpi('Préstamos y avances', sumK('prestamo'), { tipo: 'gasto', anyEmp: true, ek: 'prestamo' })}${aport.map(t => `<div class="kpi"><span class="lbl">${OTIP[t.tipo]} ${mLabel(t.periodo, true)}</span><strong>${money(t.monto)}</strong><span class="st ${taxState(t).l}">${taxState(t).t}</span></div>`).join('')}</div>
+    <p class="explain">Cada pago de caja que menciona a un empleado (comida, pago de domingo, préstamo, sueldo…) se suma a su perfil. Toca un nombre para ver todo lo que recibió en el mes. Emmanuel, Fermín, María y Eliza siguen en <strong>Personal</strong>.</p>
+    ${prof}
+    ${sinEmp.length ? `<div class="banner"><p><strong>${sinEmp.length} pagos de nómina sin empleado</strong> (${money(sinT)}): son pagos en bloque ("Nómina", "Fondo para nómina") o sin nombre (regalía, avance, descuento). Ábrelos si quieres asignarlos.</p>${dl({ tipo: 'gasto', sinEmp: true }, 'Ver', 'lnk go')}</div>` : ''}
+    <div class="panel"><div class="panel-head"><h2>Lo que recibió cada empleado</h2><span class="hint">${mLabel(m)} · nómina + pagos de caja</span></div>
+      <div class="scroll"><table><thead><tr><th>Empleado</th><th class="r">Nómina</th>${Object.values(EK).map(n => `<th class="r">${n}</th>`).join('')}<th class="r">Total del mes</th></tr></thead><tbody>
+      ${rows.map(({ e, c, q, t }) => `<tr${S.empSel === e.id ? ' class="sub"' : ''}><td><button class="cellbtn" data-empsel="${esc(e.id)}"><strong>${esc(e.nombre)}</strong></button><span class="cell-b">${esc(e.planilla || '')}${e.cargo ? ' · ' + esc(e.cargo) : ''}</span></td><td class="r num">${q.neto ? money(q.neto) : '<span class="hint">—</span>'}</td>${Object.keys(EK).map(k => `<td class="r num">${cm({ tipo: 'gasto', emp: e.id, ek: k }, c[k] || 0)}</td>`).join('')}<td class="r num"><strong>${money(t)}</strong></td></tr>`).join('')}
+      <tr class="foot"><td>Total</td><td class="r num">${money(qNeto)}</td>${Object.keys(EK).map(k => `<td class="r num">${money(sumK(k))}</td>`).join('')}<td class="r num">${money(qNeto + cajaT)}</td></tr></tbody></table></div></div>
+    ${quinc}
+    <div class="panel"><div class="panel-head"><h2>Agregar empleado</h2><span class="hint">Para que sus pagos se sumen solos a su perfil</span></div>
+      <div class="form"><label class="f">Nombre<input id="ne-nom" maxlength="80"></label><label class="f">Cómo aparece en las hojas<input id="ne-alias" maxlength="120" placeholder="Ej. Joelito, Joel (separa con comas)"></label>
+      <label class="f">Planilla<input id="ne-pla" maxlength="40" placeholder="Ej. Leo Muebles"></label><label class="f">Sueldo mensual<input id="ne-sal" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <div class="btns full"><button class="btn primary" id="neAdd" type="button">Agregar</button><button class="btn" id="empAuto" type="button">Asignar pagos automáticamente</button></div></div></div>`;
+}
+
 function renderCaja() {
   const v = $('#v-caja'), d = daily(S.mes, S.vsuc), sc = vsc();
   const days = Object.keys(d).sort();
@@ -1395,7 +1474,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = fals
 function resetForm() {
   S.editId = null; S.editMes = null; S.editCxp = null;
   $('#gFormTitle').textContent = 'Registrar movimiento'; $('#g-cancel').hidden = true;
-  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-nota').value = ''; $('#g-veh').value = ''; S.vehTouched = false; $('#g-comp').checked = false; $('#g-err').textContent = '';
+  $('#g-monto').value = ''; $('#g-desc').value = ''; $('#g-prov').value = ''; $('#g-nota').value = ''; $('#g-veh').value = ''; S.vehTouched = false; fillEmpSel(); $('#g-emp').value = ''; S.empTouched = false; $('#g-comp').checked = false; $('#g-err').textContent = '';
   const t = todayISO(); $('#g-fecha').value = t.slice(0, 7) === S.mes ? t : S.mes + '-01';
   applyTipo(S.tipo, true);
 }
@@ -1408,6 +1487,7 @@ $('#gForm').addEventListener('submit', async e => {
   const g = { id: S.editId || uid(), tipo: tp, fecha, monto, suc: $('#g-suc').value, cat: tp === 'deposito' ? 'deposito' : $('#g-cat').value,
     desc: $('#g-desc').value.trim(), prov: $('#g-prov').value.trim(), metodo: $('#g-met').value, comp: $('#g-comp').checked, nota: $('#g-nota').value.trim(), ts: new Date().toISOString() };
   if (tp === 'gasto' && VEH[$('#g-veh').value]) g.veh = $('#g-veh').value;
+  if (tp === 'gasto' && empById($('#g-emp').value)) g.emp = $('#g-emp').value;
   const linked = S.editCxp; if (linked) g.cxp = linked;
   const m = fecha.slice(0, 7), btn = $('#g-save'); btn.disabled = true; err.textContent = '';
   try {
@@ -1423,6 +1503,8 @@ $('#gForm').addEventListener('submit', async e => {
 $('#g-cancel').addEventListener('click', () => { resetForm(); render(); });
 $('#g-veh').innerHTML = '<option value="">Ninguno</option>' + VEHS.map(x => `<option value="${x.id}">${esc(x.n)}</option>`).join('');
 $('#g-veh').addEventListener('change', () => { S.vehTouched = true; });
+$('#g-emp').addEventListener('change', () => { S.empTouched = true; });
+['#g-desc', '#g-nota'].forEach(s => $(s).addEventListener('input', () => { if (!S.empTouched) { fillEmpSel(); $('#g-emp').value = empGuess({ desc: $('#g-desc').value, nota: $('#g-nota').value }); } }));
 ['#g-desc', '#g-nota'].forEach(s => $(s).addEventListener('input', () => { if (!S.vehTouched) $('#g-veh').value = vehGuess({ desc: $('#g-desc').value, nota: $('#g-nota').value }); }));
 ['#f-tipo', '#f-suc', '#f-cat', '#f-q', '#f-desde', '#f-hasta'].forEach(s => $(s).addEventListener('input', renderList));
 
@@ -1437,7 +1519,7 @@ document.addEventListener('click', async e => {
     applyTipo(tipoOf(g), false);
     $('#g-fecha').value = g.fecha; $('#g-monto').value = g.monto; $('#g-suc').value = g.suc;
     if (tipoOf(g) !== 'deposito') $('#g-cat').value = g.cat;
-    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-nota').value = g.nota || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp; $('#g-veh').value = VEH[g.veh] ? g.veh : ''; S.vehTouched = true;
+    $('#g-desc').value = g.desc || ''; $('#g-prov').value = g.prov || ''; $('#g-nota').value = g.nota || ''; $('#g-met').value = g.metodo || 'efectivo'; $('#g-comp').checked = !!g.comp; $('#g-veh').value = VEH[g.veh] ? g.veh : ''; S.vehTouched = true; fillEmpSel(); $('#g-emp').value = empById(g.emp) ? g.emp : ''; S.empTouched = true;
     $('#gFormTitle').textContent = 'Editar ' + TIPO_N[tipoOf(g)].toLowerCase(); $('#g-save').textContent = 'Guardar cambios'; $('#g-cancel').hidden = false; $('#g-err').textContent = '';
     renderList(); $('#gForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#g-monto').focus({ preventScroll: true }); return;
   }
@@ -1469,7 +1551,7 @@ document.addEventListener('click', async e => {
     try { for (const [m, doc] of Object.entries(d.months || {})) { const its = Object.fromEntries(Object.entries(doc.items || {}).filter(([, g]) => g !== undefined)); n += Object.values(its).filter(Boolean).length; nd += Object.values(its).filter(g => g === null).length;
         const ref = S.db.doc('meses/' + m); const sn = await ref.get(); if (sn.exists) await ref.update({ items: its }); else await ref.set({ items: Object.fromEntries(Object.entries(its).filter(([, g]) => g)) }); }
       for (const [id, f] of Object.entries(d.cxp || {})) await S.db.doc('cxp/' + id).set(f);
-      if (d.cfg && (d.cfg.notasDep || d.cfg.oblig)) await saveCfg({ ...S.cfg, ...(d.cfg.notasDep ? { notasDep: d.cfg.notasDep } : {}), ...(d.cfg.oblig ? { oblig: d.cfg.oblig } : {}) });
+      if (d.cfg && (d.cfg.notasDep || d.cfg.oblig || d.cfg.nomina)) await saveCfg({ ...S.cfg, ...(d.cfg.notasDep ? { notasDep: d.cfg.notasDep } : {}), ...(d.cfg.oblig ? { oblig: d.cfg.oblig } : {}), ...(d.cfg.nomina ? { nomina: d.cfg.nomina } : {}) });
       S.bkData = null; $('#bkConfirm').hidden = true; $('#bkInfo').hidden = true; $('#bkFile').value = '';
       toast(`Se agregaron ${n} movimientos` + (nd ? ` y se quitaron ${nd}` : '')); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'bkYes') { try { await S.db.importAll(S.bkData); S.bkData = null; toast('Copia restaurada'); render(); } catch (x) { toast(errMsg(x)); } return; }
@@ -1486,6 +1568,15 @@ document.addEventListener('click', async e => {
   if (t.id === 'csvBtn') { exportCsv(); return; }
   if (t.dataset.mesGo) { setMes(t.dataset.mesGo); return; }
   if (t.dataset.vsuc !== undefined) { S.vsuc = t.dataset.vsuc; render(); return; }
+  if (t.dataset.empsel !== undefined) { S.empSel = t.dataset.empsel || null; render(); if (S.empSel) $('#empProf')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (t.id === 'neAdd') { const nom = $('#ne-nom').value.trim(); if (!nom) { toast('Escribe el nombre.'); return; }
+    const N = NOM(), id = normTxt(nom).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '_' + uid().slice(-3);
+    const alias = $('#ne-alias').value.split(',').map(s => s.trim()).filter(Boolean);
+    const e = { id, nombre: nom, alias: alias.length ? alias : [nom.split(' ')[0]], planilla: $('#ne-pla').value.trim() || 'Fuera de nómina', salario: parseFloat($('#ne-sal').value) || 0 };
+    try { await saveCfg({ ...S.cfg, nomina: { ...N, empleados: [...N.empleados, e] } }); toast('Empleado agregado'); render(); } catch (x) { toast(errMsg(x)); } return; }
+  if (t.id === 'empAuto') { const p = {}; for (const g of items(S.mes)) if (tipoOf(g) === 'gasto' && !empById(g.emp)) { const id = empGuess(g); if (id) p[g.id] = { ...g, emp: id }; }
+    const n = Object.keys(p).length; if (!n) { toast('No encontré pagos nuevos para asignar.'); return; }
+    try { await patchMonth(S.mes, { items: p }); toast(`Se asignaron ${n} pagos a empleados`); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.dataset.otoggle) { S.oblOpen = S.oblOpen === t.dataset.otoggle ? null : t.dataset.otoggle; renderOblig(); return; }
   if (t.dataset.opay) { S.oblPay = t.dataset.opay; renderOblig(); $('#op-monto')?.focus(); return; }
   if (t.matches('[data-opay-cancel]')) { S.oblPay = null; renderOblig(); return; }
@@ -1537,7 +1628,7 @@ function setMes(m) { S.mes = m; S.confirmDel = null; S.openCat = null; if (S.she
 $('#prevM').addEventListener('click', () => setMes(addM(S.mes, -1)));
 $('#nextM').addEventListener('click', () => setMes(addM(S.mes, 1)));
 function route() { let h = location.hash.slice(1); if (h === 'porpagar') h = 'suplidores'; if (h === 'fechas') h = 'resumen';
-  S.tab = ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
+  S.tab = ['resumen', 'ingresos', 'gastos', 'fondos', 'vehiculos', 'nomina', 'caja', 'movimientos', 'suplidores', 'oblig', 'presupuestos', 'ajustes'].includes(h) ? h : 'resumen'; render(); }
 window.addEventListener('hashchange', route);
 
 function subscribe() {

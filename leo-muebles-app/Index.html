@@ -1099,6 +1099,8 @@ function daily(m, suc) {
     else if (tp === 'fondo') { r.fon += a; if (g.metodo === 'efectivo') r.fonEf += a; }
     else { r.dep += a; if (g.metodo === 'cheque') r.depCh += a; else r.depEf += a; }
   }
+  const all = items(m).map(g => g.fecha).filter(Boolean).sort();
+  if (all.length) { for (let k = all[0]; k <= all[all.length - 1]; k = addDays(k, 1)) d[k] ||= { ef: 0, tr: 0, tj: 0, ch: 0, ing: 0, gas: 0, gasEf: 0, fon: 0, fonEf: 0, dep: 0, depEf: 0, depCh: 0 }; }
   for (const k in d) d[k].efc = d[k].ef + d[k].ch;
   return d;
 }
@@ -1111,7 +1113,7 @@ const sumDays = (d, days, f) => days.reduce((a, k) => a + d[k][f], 0);
 const whereTxt = () => `${mLabel(S.mes)}${S.vsuc ? ' · ' + esc(name(S.vsuc)) : ''}`;
 
 function renderIngresos() {
-  const v = $('#v-ingresos'), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].ing).sort(), sc = vsc();
+  const v = $('#v-ingresos'), d = daily(S.mes, S.vsuc), days = Object.keys(d).sort(), sc = vsc();
   const T = f => sumDays(d, days, f), hasCh = T('ch') > 0;
   const cols = [['ef', 'Efectivo', 'efectivo'], ['tr', 'Transferencia', 'transferencia'], ['tj', 'Tarjeta', 'tarjeta'], ...(hasCh ? [['ch', 'Cheque', 'cheque']] : [])];
   v.innerHTML = `${sucChips()}
@@ -1123,7 +1125,7 @@ function renderIngresos() {
 }
 
 function renderGastos() {
-  const v = $('#v-gastos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].gas).sort(), sc = vsc();
+  const v = $('#v-gastos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).sort(), sc = vsc();
   const amt = id => { const row = c.gcat[id]; return row ? (S.vsuc ? row[S.vsuc] : row.t) : 0; };
   const grp = t => GCATS.filter(k => k.t === t).reduce((a, k) => a + amt(k.id), 0);
   const total = sumDays(d, days, 'gas');
@@ -1135,12 +1137,12 @@ function renderGastos() {
     <div class="panel"><div class="panel-head"><h2>Gastos por categoría</h2><span class="hint">${S.vsuc ? whereTxt() : mLabel(S.mes) + ' · todas las sucursales · lo compartido se divide entre las 3'}</span></div>${S.vsuc ? gasTableSuc(c, S.vsuc) : gasTable(c)}</div>
     <div class="panel"><div class="panel-head"><h2>Gastos por día</h2><span class="hint">${whereTxt()}</span></div>
       ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Gastos del día</th></tr></thead><tbody>
-        ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'gasto', ...sc }, dayName(k))}</td><td class="r num">${dl({ dia: k, tipo: 'gasto', ...sc }, money(d[k].gas))}</td></tr>`).join('')}
+        ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'gasto', ...sc }, dayName(k))}</td><td class="r num">${cellM({ dia: k, tipo: 'gasto', ...sc }, d[k].gas)}</td></tr>`).join('')}
         <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay gastos en ${whereTxt()}.</p>`}</div>`;
 }
 
 function renderFondos() {
-  const v = $('#v-fondos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).filter(k => d[k].fon).sort(), sc = vsc();
+  const v = $('#v-fondos'), c = calc(S.mes), d = daily(S.mes, S.vsuc), days = Object.keys(d).sort(), sc = vsc();
   const amt = id => { const row = c.fcat[id]; return row ? (S.vsuc ? row[S.vsuc] : row.t) : 0; };
   const total = sumDays(d, days, 'fon'), ks = FCATS.filter(k => amt(k.id));
   v.innerHTML = `${sucChips()}
@@ -1148,13 +1150,13 @@ function renderFondos() {
     <p class="explain">Los fondos son dinero que apartas (ahorros). <strong>No cuentan como gasto</strong>, pero sí salen de la caja, por eso se restan en Caja y depósitos.</p>
     <div class="panel"><div class="panel-head"><h2>Fondos por día</h2><span class="hint">${whereTxt()}</span></div>
     ${days.length ? `<div class="scroll"><table><thead><tr><th>Día</th><th class="r">Apartado ese día</th></tr></thead><tbody>
-      ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'fondo', ...sc }, dayName(k))}</td><td class="r num">${dl({ dia: k, tipo: 'fondo', ...sc }, money(d[k].fon))}</td></tr>`).join('')}
+      ${days.map(k => `<tr><td>${dl({ dia: k, tipo: 'fondo', ...sc }, dayName(k))}</td><td class="r num">${cellM({ dia: k, tipo: 'fondo', ...sc }, d[k].fon)}</td></tr>`).join('')}
       <tr class="foot"><td>Total</td><td class="r num">${money(total)}</td></tr></tbody></table></div>` : `<p class="hint">No hay fondos registrados en ${whereTxt()}. Regístralos en Movimientos → Fondo.</p>`}</div>`;
 }
 
 function renderCaja() {
   const v = $('#v-caja'), d = daily(S.mes, S.vsuc), sc = vsc();
-  const days = Object.keys(d).filter(k => d[k].ef || d[k].gasEf || d[k].fonEf || d[k].depEf).sort();
+  const days = Object.keys(d).sort();
   let acc = 0;
   const rows = days.map(k => { const x = d[k], esp = x.ef - x.gasEf - x.fonEf, dif = x.depEf - esp; acc += dif; return { k, x, esp, dif, acc }; });
   const T = f => sumDays(d, days, f), esp = T('ef') - T('gasEf') - T('fonEf'), dif = T('depEf') - esp;

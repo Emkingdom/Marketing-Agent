@@ -1238,12 +1238,30 @@ function renderNomina() {
   const tssOf = e => { const k = cedKey(e.cedula); if (!k) return null; const o = {}; for (const t of aport) { const d = (t.detalle || []).find(x => cedKey(x.cedula) === k); if (d) o[t.tipo] = d; } return Object.keys(o).length ? o : null; };
   const rows = E.map(e => { const c = byEmp[e.id] || {}, q = qByEmp[e.id] || { neto: 0 }; return { e, c, q, t: q.neto + (c.t || 0) }; }).filter(r => r.t || r.e.planilla !== 'Solo en TSS');
   rows.sort((a, b) => b.t - a.t || a.e.nombre.localeCompare(b.e.nombre));
+  const tssSt = e => { const t = tssOf(e); return t?.tss ? 'si' : e.enTss === false ? 'no' : e.enTss === true ? 'si' : 'pend'; };
+  const TSL = { si: ['En la TSS', 'good'], no: ['No está en la TSS', 'bad'], pend: ['Sin confirmar', 'warn'] };
+  const tssBadge = e => { const s = tssSt(e); return `<span class="st ${TSL[s][1]}">${TSL[s][0]}</span>`; };
+  const tssMes = aport.find(t => t.tipo === 'tss');
+  const cruce = (() => { if (!tssMes) return '';
+    const work = E.filter(e => e.planilla !== 'Solo en TSS'), only = E.filter(e => e.planilla === 'Solo en TSS');
+    const grp = { si: work.filter(e => tssSt(e) === 'si'), no: work.filter(e => tssSt(e) === 'no'), pend: work.filter(e => tssSt(e) === 'pend') };
+    const nDet = (tssMes.detalle || []).length, nTot = tssMes.trabajadores || 0;
+    const row = e => { const t = tssOf(e)?.tss, rep = t ? (t.reportado ?? t.salario) : 0, dif = t && e.salario ? e.salario - rep : 0;
+      return `<tr><td><button class="cellbtn" data-empsel="${esc(e.id)}">${esc(e.nombre)}</button><span class="cell-b">${esc(e.planilla || '')}${e.cedula ? ' · ' + esc(e.cedula) : ''}${e.tssNota ? ' · ' + esc(e.tssNota) : ''}</span></td><td class="r num">${e.salario ? money(e.salario) : '—'}</td><td class="r num">${t ? money(rep, true) : '—'}</td><td class="r num ${dif > 1 ? 'neg' : ''}">${t && e.salario ? (Math.abs(dif) < 1 ? 'Igual' : (dif > 0 ? money(dif) + ' menos' : money(-dif) + ' más')) : '—'}</td><td class="r num">${t ? money(t.total, true) : '—'}</td></tr>`; };
+    const sec = (k, title, hint) => grp[k].length ? `<tr class="obl-sub"><td colspan="5">${title} (${grp[k].length})${hint ? `<span class="cell-b" style="white-space:normal">${hint}</span>` : ''}</td></tr>${grp[k].map(row).join('')}` : '';
+    return `<div class="panel"><div class="panel-head"><h2>Cruce de empleados con la TSS</h2><span class="hint">Por cédula · TSS ${mLabel(tssMes.periodo)}</span></div>
+      <div class="kpis" style="margin-bottom:12px"><div class="kpi"><span class="lbl">En la TSS</span><strong>${grp.si.length}</strong></div><div class="kpi"><span class="lbl">No están en la TSS</span><strong class="neg">${grp.no.length}</strong></div><div class="kpi"><span class="lbl">Sin confirmar</span><strong>${grp.pend.length}</strong></div><div class="kpi"><span class="lbl">En la TSS pero no en tu nómina</span><strong>${only.length}</strong></div></div>
+      ${nTot && nDet < nTot ? `<p class="explain" style="margin-bottom:12px">Solo tengo el detalle de <strong>${nDet} de ${nTot}</strong> empleados de la TSS (página 1 de 2). Con la página 2 se confirman los que dicen "Sin confirmar".</p>` : ''}
+      <div class="scroll"><table><thead><tr><th>Empleado</th><th class="r">Sueldo en nómina</th><th class="r">Salario reportado a la TSS</th><th class="r">Diferencia</th><th class="r">Aporte TSS del mes</th></tr></thead><tbody>
+      ${sec('no', 'No están en la TSS', 'Trabajan en la empresa pero no aparecen inscritos.')}${sec('pend', 'Sin confirmar', 'Pueden estar en la página 2 del detalle o no tener cédula registrada aquí.')}${sec('si', 'Inscritos en la TSS', '')}
+      ${only.length ? `<tr class="obl-sub"><td colspan="5">En la TSS pero no en tu nómina (${only.length})<span class="cell-b" style="white-space:normal">La empresa paga su TSS aunque no aparecen en las 3 planillas de la quincena.</span></td></tr>${only.map(row).join('')}` : ''}</tbody></table></div></div>`; })();
   const sel = empById(S.empSel);
   const cm = (sp, val) => cellM(sp, val);
   let prof = '';
   if (sel) {
     const c = byEmp[sel.id] || {}, q = qByEmp[sel.id] || { neto: 0, n: [] }, ts = tssOf(sel), tot = q.neto + (c.t || 0);
     prof = `<div class="panel" id="empProf"><div class="panel-head"><h2>${esc(sel.nombre)}</h2><button class="btn small" data-empsel="">Cerrar perfil</button></div>
+      ${tssMes ? `<p style="margin:0 0 10px">${tssBadge(sel)}${sel.tssNota ? ` <span class="hint">${esc(sel.tssNota)}</span>` : ''}</p>` : ''}
       <div class="kv" style="max-width:560px;margin-bottom:12px">${[['Planilla', sel.planilla], ['Cargo', sel.cargo], ['Cédula', sel.cedula], ['Fecha de entrada', sel.entrada], ['Sueldo mensual (nómina)', sel.salario ? money(sel.salario, true) : ''],
         ['Lo identifico en tus hojas como', (sel.alias || []).join(', ')], ts?.tss && ['Salario reportado a la TSS', money(ts.tss.reportado ?? ts.tss.salario, true)], ts?.tss && ['Aporte TSS del mes (empresa + empleado)', money(ts.tss.total, true)], ts?.infotep && ['INFOTEP del mes', money(ts.infotep.monto, true)]]
         .filter(x => x && x[1]).map(([a, b]) => `<span class="lbl">${esc(a)}</span><span class="num">${esc(b)}</span>`).join('')}</div>
@@ -1269,12 +1287,13 @@ function renderNomina() {
     ${sinEmp.length ? `<div class="banner"><p><strong>${sinEmp.length} pagos de nómina sin empleado</strong> (${money(sinT)}): son pagos en bloque ("Nómina", "Fondo para nómina") o sin nombre (regalía, avance, descuento). Ábrelos si quieres asignarlos.</p>${dl({ tipo: 'gasto', sinEmp: true }, 'Ver', 'lnk go')}</div>` : ''}
     <div class="panel"><div class="panel-head"><h2>Lo que recibió cada empleado</h2><span class="hint">${mLabel(m)} · nómina + pagos de caja</span></div>
       <div class="scroll"><table><thead><tr><th>Empleado</th><th class="r">Nómina</th>${Object.values(EK).map(n => `<th class="r">${n}</th>`).join('')}<th class="r">Total del mes</th></tr></thead><tbody>
-      ${rows.map(({ e, c, q, t }) => `<tr${S.empSel === e.id ? ' class="sub"' : ''}><td><button class="cellbtn" data-empsel="${esc(e.id)}"><strong>${esc(e.nombre)}</strong></button><span class="cell-b">${esc(e.planilla || '')}${e.cargo ? ' · ' + esc(e.cargo) : ''}</span></td><td class="r num">${q.neto ? money(q.neto) : '<span class="hint">—</span>'}</td>${Object.keys(EK).map(k => `<td class="r num">${cm({ tipo: 'gasto', emp: e.id, ek: k }, c[k] || 0)}</td>`).join('')}<td class="r num"><strong>${money(t)}</strong></td></tr>`).join('')}
+      ${rows.map(({ e, c, q, t }) => `<tr${S.empSel === e.id ? ' class="sub"' : ''}><td><button class="cellbtn" data-empsel="${esc(e.id)}"><strong>${esc(e.nombre)}</strong></button><span class="cell-b">${esc(e.planilla || '')}${e.cargo ? ' · ' + esc(e.cargo) : ''}</span>${tssMes ? tssBadge(e) : ''}</td><td class="r num">${q.neto ? money(q.neto) : '<span class="hint">—</span>'}</td>${Object.keys(EK).map(k => `<td class="r num">${cm({ tipo: 'gasto', emp: e.id, ek: k }, c[k] || 0)}</td>`).join('')}<td class="r num"><strong>${money(t)}</strong></td></tr>`).join('')}
       <tr class="foot"><td>Total</td><td class="r num">${money(qNeto)}</td>${Object.keys(EK).map(k => `<td class="r num">${money(sumK(k))}</td>`).join('')}<td class="r num">${money(qNeto + cajaT)}</td></tr></tbody></table></div></div>
+    ${cruce}
     ${quinc}
     <div class="panel"><div class="panel-head"><h2>Agregar empleado</h2><span class="hint">Para que sus pagos se sumen solos a su perfil</span></div>
       <div class="form"><label class="f">Nombre<input id="ne-nom" maxlength="80"></label><label class="f">Cómo aparece en las hojas<input id="ne-alias" maxlength="120" placeholder="Ej. Joelito, Joel (separa con comas)"></label>
-      <label class="f">Planilla<input id="ne-pla" maxlength="40" placeholder="Ej. Leo Muebles"></label><label class="f">Sueldo mensual<input id="ne-sal" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <label class="f">Planilla<input id="ne-pla" maxlength="40" placeholder="Ej. Leo Muebles"></label><label class="f">Sueldo mensual<input id="ne-sal" type="number" min="0" step="0.01" inputmode="decimal"></label><label class="f">Cédula<input id="ne-ced" maxlength="20" placeholder="Opcional"></label><label class="check"><input type="checkbox" id="ne-tss"> Está inscrito en la TSS</label>
       <div class="btns full"><button class="btn primary" id="neAdd" type="button">Agregar</button><button class="btn" id="empAuto" type="button">Asignar pagos automáticamente</button></div></div></div>`;
 }
 
@@ -1572,7 +1591,7 @@ document.addEventListener('click', async e => {
   if (t.id === 'neAdd') { const nom = $('#ne-nom').value.trim(); if (!nom) { toast('Escribe el nombre.'); return; }
     const N = NOM(), id = normTxt(nom).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '_' + uid().slice(-3);
     const alias = $('#ne-alias').value.split(',').map(s => s.trim()).filter(Boolean);
-    const e = { id, nombre: nom, alias: alias.length ? alias : [nom.split(' ')[0]], planilla: $('#ne-pla').value.trim() || 'Fuera de nómina', salario: parseFloat($('#ne-sal').value) || 0 };
+    const e = { id, nombre: nom, alias: alias.length ? alias : [nom.split(' ')[0]], planilla: $('#ne-pla').value.trim() || 'Fuera de nómina', salario: parseFloat($('#ne-sal').value) || 0, cedula: $('#ne-ced').value.trim(), enTss: $('#ne-tss').checked };
     try { await saveCfg({ ...S.cfg, nomina: { ...N, empleados: [...N.empleados, e] } }); toast('Empleado agregado'); render(); } catch (x) { toast(errMsg(x)); } return; }
   if (t.id === 'empAuto') { const p = {}; for (const g of items(S.mes)) if (tipoOf(g) === 'gasto' && !empById(g.emp)) { const id = empGuess(g); if (id) p[g.id] = { ...g, emp: id }; }
     const n = Object.keys(p).length; if (!n) { toast('No encontré pagos nuevos para asignar.'); return; }

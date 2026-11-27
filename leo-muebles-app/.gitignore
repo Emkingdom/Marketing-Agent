@@ -1,0 +1,7 @@
+# Datos financieros privados: no subir a un repositorio público
+Datos.gs
+*.json
+gastos-*.json
+ingresos-*.json
+depositos-*.json
+*.xlsx
